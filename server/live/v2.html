@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>SJRI PoC - Outcome & Risk Dashboard (v2)</title>
+  <style>
+    :root {
+      --bg: #eff1f8;
+      --card: #ffffff;
+      --ink: #11162f;
+      --muted: #5d5d66;
+      --blue: #292d6e;
+      --gold: #d0bb68;
+      --line: #e2e8f0;
+      --red: #b42318;
+      --amber: #b54708;
+      --green: #156f3d;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+    .wrap { max-width: 1480px; margin: 0 auto; padding: 24px; }
+    .hero {
+      background: linear-gradient(120deg, #1f245f 0%, #292d6e 70%, #d0bb68 100%);
+      color: #fff;
+      border-radius: 16px;
+      padding: 18px 22px;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+    }
+    .hero h1 { margin: 0 0 6px; font-size: 30px; }
+    .hero p { margin: 0; font-size: 14px; opacity: .95; }
+    .status-chip {
+      border: 1px solid rgba(255,255,255,.4);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      background: rgba(255,255,255,.1);
+      white-space: nowrap;
+    }
+
+    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 14px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .kpi { grid-column: span 3; }
+    .wide-6 { grid-column: span 6; }
+    .wide-12 { grid-column: span 12; }
+
+    .widget-title {
+      margin: -14px -14px 12px;
+      padding: 10px 13px;
+      border-radius: 14px 14px 0 0;
+      color: #fff;
+      font-size: 17px;
+      font-weight: 700;
+      background: linear-gradient(90deg, #23285f 0%, #292d6e 72%, #d0bb68 100%);
+    }
+
+    .kpi .label { font-size: 11px; color: var(--muted); text-transform: uppercase; font-weight: 700; }
+    .kpi .val { margin-top: 7px; font-size: 36px; font-weight: 800; line-height: 1; }
+    .kpi .sub { margin-top: 4px; font-size: 12px; color: #6a7197; }
+    .val.good { color: var(--green); }
+    .val.warn { color: var(--amber); }
+    .val.bad { color: var(--red); }
+
+    table { width: 100%; border-collapse: collapse; background: #f9fafc; font-size: 13px; }
+    th, td { border-bottom: 1px solid #e6ebf6; padding: 8px; color: #2b3465; text-align: left; vertical-align: top; }
+    th { font-size: 11px; text-transform: uppercase; background: #eef2fb; color: #4a567c; }
+
+    .badge {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: 800;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+    .badge.red { background: #fde8e8; color: #b42318; border-color: #f4b5b3; }
+    .badge.amber { background: #fff2e0; color: #b54708; border-color: #f3c98b; }
+    .badge.green { background: #e7f6ed; color: #156f3d; border-color: #b8e4c8; }
+
+    .story {
+      display: grid;
+      gap: 8px;
+      font-size: 14px;
+    }
+    .story .item {
+      border: 1px solid #e3e9f7;
+      border-left: 4px solid #292d6e;
+      border-radius: 8px;
+      background: #f8fafc;
+      padding: 8px 10px;
+      color: #2b3465;
+    }
+
+    .signal-grid { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 8px; }
+    .signal {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #f8fafc;
+      padding: 8px;
+      display: grid;
+      gap: 4px;
+    }
+    .signal .name { color: var(--muted); font-size: 11px; text-transform: uppercase; font-weight: 700; }
+    .signal .num { font-size: 20px; font-weight: 800; color: #292d6e; }
+
+    .pressure-list { display: grid; gap: 8px; }
+    .pressure-row {
+      display: grid;
+      grid-template-columns: 220px 1fr 60px;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+    .pressure-name {
+      color: #292d6e;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .pressure-track { height: 9px; border-radius: 999px; background: #e8ecf8; overflow: hidden; }
+    .pressure-track > span { display: block; height: 100%; background: linear-gradient(90deg, #d0bb68, #292d6e); }
+    .pressure-val { text-align: right; color: #5d5d66; font-weight: 700; }
+
+    .ref-note {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #5d5d66;
+      line-height: 1.4;
+    }
+
+    @media (max-width: 1100px) {
+      .kpi, .wide-6, .wide-12 { grid-column: span 12; }
+      .signal-grid { grid-template-columns: 1fr 1fr; }
+      .pressure-row { grid-template-columns: 1fr; }
+      .hero { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <div>
+        <h1>SJRI Asset Tracking PoC - Outcome & Risk Dashboard (v2)</h1>
+        <p id="lastUpdated">Last updated: loading...</p>
+      </div>
+      <div id="overallStatus" class="status-chip">Evaluating risk posture...</div>
+    </section>
+
+    <section class="grid">
+      <article class="card kpi">
+        <div class="label">Visibility Coverage</div>
+        <div class="val" id="kpiCoverage">-</div>
+        <div class="sub" id="kpiCoverageSub">Known-location assets</div>
+      </article>
+      <article class="card kpi">
+        <div class="label">Unknown Location Assets</div>
+        <div class="val" id="kpiUnknownAssets">-</div>
+        <div class="sub">Assets currently out of named zones</div>
+      </article>
+      <article class="card kpi">
+        <div class="label">Unknown Anchor Meaningful Events (Today)</div>
+        <div class="val" id="kpiUnknownEvents">-</div>
+        <div class="sub" id="kpiUnknownTrend">vs 7-day average</div>
+      </article>
+      <article class="card kpi">
+        <div class="label">Stale Tracking Assets &gt;5h</div>
+        <div class="val" id="kpiStale">-</div>
+        <div class="sub" id="kpiStaleSub">Includes &gt;24h and &gt;5d bands</div>
+      </article>
+
+      <article class="card wide-6">
+        <h2 class="widget-title">Critical: Assets Out of Named View</h2>
+        <table id="unknownAssetsTable">
+          <thead>
+            <tr><th>Asset</th><th>Current Zone</th><th>Last Seen</th><th>Hours Since Seen</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </article>
+
+      <article class="card wide-6">
+        <h2 class="widget-title">Critical: Tracking Staleness</h2>
+        <table id="staleAssetsTable">
+          <thead>
+            <tr><th>Asset</th><th>Current Zone</th><th>Last Seen</th><th>Hours Since Seen</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </article>
+
+      <article class="card wide-6">
+        <h2 class="widget-title">Unknown Anchor Hotspots (Today)</h2>
+        <table id="unknownAnchorTable">
+          <thead>
+            <tr><th>Unknown Anchor/Zone</th><th>Meaningful Events</th><th># Assets</th><th>Severity</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <div class="ref-note">Reference: Meaningful events count only location-change entries (previous location ≠ current location) into unknown zones; repeated same-location telemetry is excluded.</div>
+      </article>
+
+      <article class="card wide-6">
+        <h2 class="widget-title">Location Pressure (Operational Load)</h2>
+        <div id="pressureList" class="pressure-list"></div>
+        <div class="ref-note">Reference datapoints: Daily Total Visits, Assets Now, and Peak Occupancy Today. Pressure Score = 0.5 × Daily Visits + 0.3 × Assets Now + 0.2 × Peak Occupancy.</div>
+      </article>
+
+      <article class="card wide-12">
+        <h2 class="widget-title">Platform Reliability Signals (24h)</h2>
+        <div id="reliabilityGrid" class="signal-grid"></div>
+      </article>
+
+      <article class="card wide-12">
+        <h2 class="widget-title">Business Outcome Narrative</h2>
+        <div id="story" class="story"></div>
+      </article>
+    </section>
+  </div>
+
+  <script>
+    const DATA_URL = './sjri_live_data_v2.json';
+    const TWO_MIN = 120000;
+
+    function fmtNum(n) {
+      if (n === null || n === undefined) return '-';
+      return Number(n).toLocaleString('en-IN');
+    }
+
+    function sevByHours(h) {
+      if (h > 120) return { cls: 'red', txt: 'Critical >5d' };
+      if (h > 24) return { cls: 'amber', txt: 'High >24h' };
+      if (h > 5) return { cls: 'amber', txt: 'Moderate >5h' };
+      return { cls: 'green', txt: 'Healthy' };
+    }
+
+    function sevByEvents(e) {
+      const n = Number(e || 0);
+      if (n >= 40) return { cls: 'red', txt: 'Critical' };
+      if (n >= 15) return { cls: 'amber', txt: 'High' };
+      return { cls: 'green', txt: 'Watch' };
+    }
+
+    function renderKpis(data) {
+      const rs = data.risk_summary || {};
+      const os = data.outcome_story || {};
+      const coverage = Number(os.visibility_coverage_pct || 0);
+      const unknownAssets = Number(rs.unknown_location_assets || 0);
+      const stale5 = Number(rs.stale_gt_5h_assets || 0);
+      const stale24 = Number(rs.stale_gt_24h_assets || 0);
+      const stale120 = Number(rs.stale_gt_120h_assets || 0);
+      const unknownToday = Number(rs.unknown_events_today || 0);
+      const trend = Number(os.unknown_event_trend_vs_7d_pct || 0);
+
+      const cEl = document.getElementById('kpiCoverage');
+      cEl.textContent = `${coverage.toFixed(1)}%`;
+      cEl.className = `val ${coverage >= 85 ? 'good' : coverage >= 70 ? 'warn' : 'bad'}`;
+      document.getElementById('kpiCoverageSub').textContent = `${fmtNum(Number(rs.total_assets || 0) - unknownAssets)} of ${fmtNum(rs.total_assets)} assets in named zones`;
+
+      const uEl = document.getElementById('kpiUnknownAssets');
+      uEl.textContent = fmtNum(unknownAssets);
+      uEl.className = `val ${unknownAssets === 0 ? 'good' : unknownAssets <= 2 ? 'warn' : 'bad'}`;
+
+      const eEl = document.getElementById('kpiUnknownEvents');
+      eEl.textContent = fmtNum(unknownToday);
+      eEl.className = `val ${unknownToday < 20 ? 'good' : unknownToday < 80 ? 'warn' : 'bad'}`;
+      document.getElementById('kpiUnknownTrend').textContent = `${trend >= 0 ? '+' : ''}${trend.toFixed(1)}% vs 7-day average`;
+
+      const sEl = document.getElementById('kpiStale');
+      sEl.textContent = fmtNum(stale5);
+      sEl.className = `val ${stale5 === 0 ? 'good' : stale5 <= 2 ? 'warn' : 'bad'}`;
+      document.getElementById('kpiStaleSub').textContent = `>24h: ${fmtNum(stale24)} | >5d: ${fmtNum(stale120)}`;
+
+      const status = unknownAssets > 0 || unknownToday > 50 || stale5 > 0
+        ? 'Risk posture: Action required on unknown zones and/or stale tracking'
+        : 'Risk posture: Stable';
+      document.getElementById('overallStatus').textContent = status;
+      document.getElementById('lastUpdated').textContent = `Last updated: ${data.generated_at_ist || '-'} | Focus: measurable outcomes and risks`;
+    }
+
+    function renderUnknownAssets(data) {
+      const rows = data.unknown_assets_recent || [];
+      const tbody = document.querySelector('#unknownAssetsTable tbody');
+      tbody.innerHTML = rows.slice(0, 12).map(r => {
+        const h = Number(r.hours_since_seen || 0);
+        const sev = sevByHours(h);
+        return `<tr>
+          <td>${r.asset_label || '-'}</td>
+          <td>${r.current_location || '-'}</td>
+          <td>${r.last_seen_ist || '-'}</td>
+          <td><span class="badge ${sev.cls}">${fmtNum(h)}h · ${sev.txt}</span></td>
+        </tr>`;
+      }).join('') || '<tr><td colspan="4">No assets currently in unknown zones.</td></tr>';
+    }
+
+    function renderStaleAssets(data) {
+      const rows = data.stale_assets_recent || [];
+      const tbody = document.querySelector('#staleAssetsTable tbody');
+      tbody.innerHTML = rows.slice(0, 12).map(r => {
+        const h = Number(r.hours_since_seen || 0);
+        const sev = sevByHours(h);
+        return `<tr>
+          <td>${r.asset_label || '-'}</td>
+          <td>${r.current_location || '-'}</td>
+          <td>${r.last_seen_ist || '-'}</td>
+          <td><span class="badge ${sev.cls}">${fmtNum(h)}h · ${sev.txt}</span></td>
+        </tr>`;
+      }).join('') || '<tr><td colspan="4">No stale assets beyond 5h currently.</td></tr>';
+    }
+
+    function renderUnknownAnchors(data) {
+      const rows = data.unknown_anchor_hotspots || [];
+      const tbody = document.querySelector('#unknownAnchorTable tbody');
+      tbody.innerHTML = rows.slice(0, 12).map(r => {
+        const sev = sevByEvents(r.event_count);
+        return `<tr>
+          <td>${r.location_label || '-'}</td>
+          <td>${fmtNum(r.event_count)}</td>
+          <td>${fmtNum(r.affected_assets)}</td>
+          <td><span class="badge ${sev.cls}">${sev.txt}</span></td>
+        </tr>`;
+      }).join('') || '<tr><td colspan="4">No unknown anchor hotspots today.</td></tr>';
+    }
+
+    function renderPressure(data) {
+      const rows = data.location_pressure || [];
+      const maxScore = Math.max(1, ...rows.map(r => Number(r.pressure_score || 0)));
+      const wrap = document.getElementById('pressureList');
+      wrap.innerHTML = rows.slice(0, 8).map(r => {
+        const score = Number(r.pressure_score || 0);
+        const w = (score * 100 / maxScore).toFixed(1);
+        return `<div class="pressure-row">
+          <span class="pressure-name" title="${r.location_label || '-'}">${r.location_label || '-'}</span>
+          <div class="pressure-track"><span style="width:${w}%"></span></div>
+          <span class="pressure-val">${score.toFixed(1)}</span>
+        </div>`;
+      }).join('') || '<div>No location pressure data.</div>';
+    }
+
+    function renderReliability(data) {
+      const r = data.reliability_signals || {};
+      const ws = data.ws_signal_quality_24h || {};
+      const items = [
+        ['WS raw events (24h)', ws.raw_ws_events_24h],
+        ['WS ignored keepalive/noise (24h)', ws.ignored_ws_events_24h],
+        ['WS meaningful events (24h)', ws.meaningful_ws_events_24h],
+        ['WS ignored ratio (24h)', `${Number(ws.ignored_ratio_pct_24h || 0).toFixed(1)}%`],
+        ['Offline transitions + timeout alerts', `${fmtNum(ws.status_offline_transitions_24h || 0)} + ${fmtNum(ws.timeout_alerts_24h || 0)}`]
+      ];
+      document.getElementById('reliabilityGrid').innerHTML = items.map(([k, v]) => `
+        <div class="signal">
+          <div class="name">${k}</div>
+          <div class="num">${typeof v === 'string' ? v : fmtNum(v || 0)}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderStory(data) {
+      const rs = data.risk_summary || {};
+      const os = data.outcome_story || {};
+      const total = Number(rs.total_assets || 0);
+      const unknownAssets = Number(rs.unknown_location_assets || 0);
+      const knownAssets = Math.max(0, total - unknownAssets);
+      const trend = Number(os.unknown_event_trend_vs_7d_pct || 0);
+
+      const items = [
+        `Current named-location visibility is ${fmtNum(knownAssets)} of ${fmtNum(total)} assets (${Number(os.visibility_coverage_pct || 0).toFixed(1)}%).`,
+        `${fmtNum(unknownAssets)} assets are presently in unknown zones, which should be prioritized for anchor mapping and floor plotting.`,
+        `Unknown-anchor meaningful event volume today is ${fmtNum(rs.unknown_events_today || 0)}, which is ${trend >= 0 ? 'higher' : 'lower'} by ${Math.abs(trend).toFixed(1)}% versus the recent 7-day baseline.`,
+        `Tracking freshness shows ${fmtNum(rs.stale_gt_5h_assets || 0)} assets beyond 5 hours without updates (>${fmtNum(rs.stale_gt_24h_assets || 0)} beyond 24h).`
+      ];
+
+      document.getElementById('story').innerHTML = items.map(t => `<div class="item">${t}</div>`).join('');
+    }
+
+    async function fetchAndRender() {
+      try {
+        const res = await fetch(`${DATA_URL}?t=${Date.now()}`, { cache: 'no-store' });
+        const data = await res.json();
+        renderKpis(data);
+        renderUnknownAssets(data);
+        renderStaleAssets(data);
+        renderUnknownAnchors(data);
+        renderPressure(data);
+        renderReliability(data);
+        renderStory(data);
+      } catch (e) {
+        document.getElementById('lastUpdated').textContent = 'Datasource unavailable. Retrying...';
+      }
+    }
+
+    fetchAndRender();
+    setInterval(fetchAndRender, TWO_MIN);
+    setInterval(() => window.location.reload(), TWO_MIN);
+  </script>
+</body>
+</html>

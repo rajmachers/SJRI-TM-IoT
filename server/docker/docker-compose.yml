@@ -1,0 +1,51 @@
+version: '3.7'
+
+services:
+  christ:
+    image: "jgun/iot-allinone-pg:latest"
+    container_name: christ
+    restart: always
+    ports:
+      - "${TB_HTTP_PORT:-9090}:9090"
+      - "${MQTT_PORT:-1883}:1883"
+      - "7070:7070"
+      - "5683-5688:5683-5688/udp"
+    environment:
+      TB_QUEUE_TYPE: in-memory
+    volumes:
+      - /opt/iot-platform/.mytb-data:/data
+      - /opt/iot-platform/.mytb-logs:/var/log/thingsboard
+    networks:
+      custom_net:
+        ipv4_address: 172.20.0.2
+
+  christ_bridge:
+    build: .
+    container_name: christ_bridge
+    depends_on:
+      - christ
+    environment:
+      - PYTHONUNBUFFERED=1
+      - THINGSBOARD_HOST=172.20.0.2:9090
+      - THINGSBOARD_USERNAME=${TB_USERNAME}
+      - THINGSBOARD_PASSWORD=${TB_PASSWORD}
+      - DEVICE_TYPE=${DEVICE_TYPE:-PoC-Tag}
+      - KINESIS_BASE=${KINESIS_BASE}
+      - SITE_ID=${SITE_ID}
+      - CLIENT_ID=${CLIENT_ID}
+      - CLIENT_SECRET=${CLIENT_SECRET}
+      - SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE=10MB
+      - SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE=10MB
+      - SERVER_MAX_HTTP_HEADER_SIZE=16384
+    restart: unless-stopped
+    networks:
+      custom_net:
+        ipv4_address: 172.20.0.3
+
+networks:
+  custom_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+          gateway: 172.20.0.1

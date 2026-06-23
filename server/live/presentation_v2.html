@@ -1,0 +1,1342 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>SJRI Asset Tracking PoC - Presentation Mode V2</title>
+  <style>
+    :root {
+      --bg: #eff1f8;
+      --card: #ffffff;
+      --ink: #11162f;
+      --muted: #5d5d66;
+      --blue: #292d6e;
+      --blue-soft: #e5e8f8;
+      --green: #d0bb68;
+      --green-soft: #f4efdc;
+      --amber: #d0bb68;
+      --amber-soft: #f4efdc;
+      --line: #e2e8f0;
+      --shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
+      background:
+        radial-gradient(circle at 10% 10%, #e7eaf8 0%, transparent 30%),
+        radial-gradient(circle at 90% 0%, #f4efdc 0%, transparent 30%),
+        var(--bg);
+      color: var(--ink);
+    }
+
+    .wrap {
+      max-width: 1480px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .hero {
+      background: linear-gradient(120deg, #1f245f 0%, #292d6e 70%, #d0bb68 100%);
+      color: #fff;
+      border-radius: 22px;
+      padding: 26px 30px;
+      margin-bottom: 18px;
+      box-shadow: var(--shadow);
+      animation: riseIn .5s ease-out both;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: 40px;
+      line-height: 1.1;
+      letter-spacing: 0.2px;
+    }
+    .hero p {
+      margin: 0;
+      font-size: 18px;
+      opacity: 0.96;
+    }
+    .hero-left { min-width: 0; }
+    .next-update {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.35);
+      border-radius: 999px;
+      padding: 7px 10px 7px 8px;
+      backdrop-filter: blur(2px);
+      flex-shrink: 0;
+    }
+    .clock-wrap {
+      width: 42px;
+      height: 42px;
+      position: relative;
+    }
+    .clock-wrap svg {
+      width: 42px;
+      height: 42px;
+      transform: rotate(-90deg);
+    }
+    .clock-bg {
+      fill: none;
+      stroke: rgba(255,255,255,.25);
+      stroke-width: 4;
+    }
+    .clock-progress {
+      fill: none;
+      stroke: #fff;
+      stroke-width: 4;
+      stroke-linecap: round;
+      stroke-dasharray: 113.1;
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset 1s linear;
+    }
+    .clock-wrap .clock-sec {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      font-weight: 800;
+      color: #fff;
+    }
+    .next-meta {
+      font-size: 11px;
+      line-height: 1.3;
+      color: #fff;
+    }
+    .next-meta strong {
+      display: block;
+      font-size: 12px;
+      letter-spacing: .2px;
+    }
+    .next-meta .state { opacity: .95; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      transform: translateY(8px);
+      opacity: 0;
+      animation: riseIn .45s ease-out forwards;
+      transition: transform .2s ease, box-shadow .2s ease;
+    }
+    .table-card {
+      padding: 18px;
+      overflow: visible;
+    }
+    .table-card table {
+      margin: 0;
+      border-radius: 0 0 14px 14px;
+      overflow: hidden;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+    }
+
+    .kpi { grid-column: span 4; }
+    .wide-8 { grid-column: span 8; }
+    .wide-6 { grid-column: span 6; }
+    .wide-4 { grid-column: span 4; }
+    .wide-12 { grid-column: span 12; }
+
+    .kpi .label {
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+    .kpi .val {
+      margin-top: 8px;
+      font-size: 44px;
+      line-height: 1;
+      font-weight: 700;
+    }
+    .kpi .note {
+      margin-top: 7px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .kpi .spark {
+      margin-top: 10px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--blue-soft);
+      overflow: hidden;
+    }
+    .kpi .spark > span {
+      display: block;
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #292d6e, #d0bb68);
+      animation: fillGrow 1s ease-out both;
+    }
+
+    h2 {
+      margin: 0 0 12px;
+      font-size: 24px;
+      line-height: 1.2;
+    }
+    .widget-title {
+      margin: -18px -18px 0;
+      padding: 12px 16px;
+      border-radius: 16px 16px 0 0;
+      color: #fff !important;
+      font-size: 18px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      letter-spacing: .2px;
+      background: linear-gradient(90deg, #23285f 0%, #292d6e 72%, #d0bb68 100%);
+    }
+    .widget-title span,
+    .widget-title * { color: #fff !important; }
+    .card > .widget-title + * {
+      margin-top: 10px;
+    }
+    .table-card > .widget-title + * {
+      margin-top: 10px;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .pill {
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 13px;
+      border: 1px solid transparent;
+      background: #eceffc;
+      color: #292d6e;
+    }
+    .pill.good { background: var(--green-soft); color: #7a6420; }
+    .pill.warn { background: var(--amber-soft); color: #7a6420; }
+
+    .signal-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-top: 2px;
+    }
+    .signal {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: #f8fafc;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 10px;
+    }
+    .signal .name { font-size: 13px; color: var(--muted); }
+    .signal .num { font-size: 20px; font-weight: 700; color: var(--ink); }
+    .signal .chip {
+      justify-self: start;
+      margin-top: 2px;
+      font-size: 12px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #eceffc;
+      color: #292d6e;
+      display: inline-block;
+    }
+
+    .insight {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .insight .box {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      background: #f8fafc;
+    }
+    .insight .box .k {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .35px;
+    }
+    .insight .box .v {
+      margin-top: 5px;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .bars {
+      margin-top: 8px;
+      display: grid;
+      gap: 8px;
+    }
+    .bars .row {
+      display: grid;
+      grid-template-columns: 230px 1fr 70px;
+      gap: 10px;
+      align-items: center;
+      font-size: 14px;
+    }
+    .track {
+      height: 10px;
+      border-radius: 999px;
+      background: #e5edff;
+      overflow: hidden;
+    }
+    .track > span {
+      display: block;
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #292d6e, #d0bb68);
+      animation: fillGrow 1.1s ease-out both;
+    }
+
+    .util-layout {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+    .util-bars {
+      display: grid;
+      gap: 8px;
+    }
+    .util-row {
+      display: grid;
+      grid-template-columns: 215px 1fr 86px 74px;
+      gap: 8px;
+      align-items: center;
+      font-size: 13px;
+    }
+    .util-row .loc {
+      color: #292d6e;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .util-track {
+      height: 10px;
+      border-radius: 999px;
+      background: #e7eaf8;
+      overflow: hidden;
+    }
+    .util-track > span {
+      display: block;
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #d0bb68, #292d6e);
+      animation: fillGrow 1s ease-out both;
+    }
+    .util-num {
+      font-weight: 700;
+      color: #292d6e;
+      text-align: right;
+    }
+    .delta {
+      justify-self: end;
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      border: 1px solid #d9def2;
+      color: #2f356f;
+      background: #edf0fb;
+    }
+    .delta.up {
+      color: #156f3d;
+      background: #e7f6ed;
+      border-color: #b8e4c8;
+    }
+    .delta.down {
+      color: #8b2a2a;
+      background: #fdeeee;
+      border-color: #f7c9c9;
+    }
+    .util-mix {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #f8fafc;
+      padding: 10px;
+    }
+    .util-donut {
+      width: 132px;
+      height: 132px;
+      margin: 4px auto 8px;
+      border-radius: 50%;
+      background: conic-gradient(#292d6e 0 28%, #4a5292 28% 45%, #6a74b4 45% 56%, #8c96ca 56% 67%, #aeb5dd 67% 78%, #d0bb68 78% 89%, #dfcf95 89% 95%, #ece4c0 95% 100%);
+      position: relative;
+    }
+    .util-donut::after {
+      content: "Visits";
+      position: absolute;
+      inset: 21px;
+      border-radius: 50%;
+      background: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: #61698d;
+    }
+    .util-legend {
+      display: grid;
+      gap: 5px;
+      font-size: 12px;
+      color: #3d4476;
+    }
+    .util-legend .item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      justify-content: space-between;
+    }
+    .util-legend .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .mobility-viz {
+      display: grid;
+      gap: 10px;
+      margin-top: 2px;
+      min-height: 280px;
+      align-content: start;
+    }
+    .mobility-legend {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      font-size: 12px;
+      color: #58608c;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #f8fafc;
+      padding: 8px 10px;
+    }
+    .mobility-legend .swatch {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    .mobility-legend .known { background: #292d6e; }
+    .mobility-legend .unknown { background: #d0bb68; }
+    .mobility-row {
+      display: grid;
+      grid-template-columns: 150px 1fr 280px;
+      gap: 10px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #f8fafc;
+      padding: 10px;
+    }
+    .mobility-month {
+      color: #2d356f;
+      font-weight: 800;
+      line-height: 1.2;
+      font-size: 20px;
+    }
+    .mobility-month span {
+      display: block;
+      margin-top: 4px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #4e5786;
+    }
+    .mobility-bar-wrap {
+      display: grid;
+      gap: 6px;
+    }
+    .mobility-bar-track {
+      width: 100%;
+      height: 24px;
+      border-radius: 999px;
+      background: #e7eaf8;
+      overflow: hidden;
+      position: relative;
+    }
+    .mobility-bar {
+      width: var(--w, 0%);
+      height: 100%;
+      display: flex;
+      border-radius: 999px;
+      overflow: hidden;
+      animation: fillGrow 1.1s ease-out both;
+    }
+    .mobility-bar .known,
+    .mobility-bar .unknown {
+      height: 100%;
+      width: var(--s, 0%);
+    }
+    .mobility-bar .known { background: #292d6e; }
+    .mobility-bar .unknown { background: #d0bb68; }
+    .mobility-metrics {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #58608c;
+      font-weight: 700;
+    }
+    .mobility-note {
+      font-size: 13px;
+      color: #49527c;
+      line-height: 1.35;
+    }
+
+    .util-size-wrap {
+      margin-top: 10px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #f8fafc;
+      padding: 10px;
+    }
+    .util-size-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .35px;
+      color: #5a6288;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+    .util-size-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 10px;
+    }
+    .util-size-item {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid #d9def2;
+      border-radius: 10px;
+      padding: 6px 8px;
+      background: #fff;
+    }
+    .util-size-bubble {
+      width: var(--s, 16px);
+      height: var(--s, 16px);
+      min-width: 12px;
+      min-height: 12px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #6a74b4 0%, #292d6e 75%);
+    }
+    .util-size-item strong {
+      display: block;
+      font-size: 12px;
+      color: #2f376d;
+      line-height: 1.2;
+    }
+    .util-size-item span {
+      display: block;
+      font-size: 11px;
+      color: #61698d;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 15px;
+      margin-top: 0;
+      background: #f4efdc;
+    }
+    th, td {
+      text-align: left;
+      padding: 9px 8px;
+      border-bottom: 1px solid #d8c98a;
+      vertical-align: top;
+      color: #292d6e;
+    }
+    th {
+      font-size: 12px;
+      color: #292d6e;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      background: #d0bb68;
+      font-weight: 700;
+    }
+
+    .stale-pill {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+    .stale-warn {
+      background: #f4efdc;
+      color: #7a6420;
+      border: 1px solid #d0bb68;
+    }
+    .stale-ok {
+      background: #e7f6ed;
+      color: #156f3d;
+      border: 1px solid #b8e4c8;
+    }
+    .stale-crit {
+      background: #fde8e8;
+      color: #b42318;
+      border: 1px solid #fdb2b2;
+    }
+
+    .table-note {
+      margin-top: 4px;
+      margin-bottom: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .wide-6 table { min-height: 280px; }
+
+    .table-pager {
+      margin-top: 8px;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .table-pager button {
+      border: 1px solid #cfd8ea;
+      background: #ffffff;
+      color: #292d6e;
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .table-pager button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .table-pager .page-info {
+      min-width: 72px;
+      text-align: center;
+    }
+    tr.pad-row td {
+      color: transparent;
+    }
+
+    .foot {
+      margin-top: auto;
+      color: var(--muted);
+      font-size: 13px;
+      padding-top: 10px;
+    }
+
+    .donut-wrap {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 14px;
+      align-items: center;
+      margin-top: 8px;
+    }
+    .donut {
+      width: 128px;
+      height: 128px;
+      border-radius: 50%;
+      background:
+        conic-gradient(var(--blue) 0 63.6%, var(--amber) 63.6% 100%);
+      position: relative;
+      animation: spinIn .8s ease-out both;
+    }
+    .donut::after {
+      content: "Mix";
+      position: absolute;
+      inset: 19px;
+      border-radius: 50%;
+      background: white;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .mini-donut {
+      width: 132px;
+      height: 132px;
+      border-radius: 50%;
+      position: relative;
+      background: conic-gradient(#292d6e 0 21.8%, #4a5292 21.8% 41.8%, #6a74b4 41.8% 56.3%, #8c96ca 56.3% 69.0%, #d0bb68 69.0% 100%);
+      animation: spinIn .8s ease-out both;
+      margin: 8px 0;
+    }
+    .mini-donut::after {
+      content: "Hotspots";
+      position: absolute;
+      inset: 20px;
+      border-radius: 50%;
+      background: #fff;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 160px 1fr;
+      gap: 14px;
+      align-items: center;
+      margin-top: 10px;
+    }
+    .compact-list {
+      display: grid;
+      gap: 10px;
+      font-size: 14px;
+      line-height: 1.45;
+      color: #2b3465;
+    }
+    .compact-list .item {
+      border: 1px solid var(--line);
+      border-left: 4px solid #292d6e;
+      border-radius: 10px;
+      background: #f8fafc;
+      padding: 10px 12px;
+    }
+
+    @keyframes riseIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fillGrow {
+      from { width: 0; }
+      to { width: var(--w, 100%); }
+    }
+    @keyframes spinIn {
+      from { transform: scale(.92) rotate(-14deg); opacity: 0; }
+      to { transform: scale(1) rotate(0); opacity: 1; }
+    }
+
+    @media (max-width: 1100px) {
+      .kpi, .wide-8, .wide-6, .wide-4 { grid-column: span 12; }
+      .hero h1 { font-size: 32px; }
+      .kpi .val { font-size: 36px; }
+      .hero { align-items: flex-start; flex-direction: column; }
+      .insight { grid-template-columns: 1fr; }
+      .mobility-row { grid-template-columns: 1fr; }
+      .mobility-month { font-size: 18px; }
+      .util-size-grid { grid-template-columns: 1fr; }
+      .bars .row { grid-template-columns: 1fr; gap: 6px; }
+      .donut-wrap { grid-template-columns: 1fr; }
+      .util-layout { grid-template-columns: 1fr; }
+      .util-row { grid-template-columns: 1fr; }
+      .util-num, .delta { justify-self: start; text-align: left; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <div class="hero-left">
+        <h1>SJRI Asset Tracking PoC - Dashboard</h1>
+        <p id="lastUpdated">Last updated: loading... | Source: IoT platform telemetry</p>
+      </div>
+      <div class="next-update" aria-live="polite">
+        <div class="clock-wrap">
+          <svg viewBox="0 0 42 42" aria-hidden="true">
+            <circle class="clock-bg" cx="21" cy="21" r="18"></circle>
+            <circle id="clockProgress" class="clock-progress" cx="21" cy="21" r="18"></circle>
+          </svg>
+          <div id="clockSec" class="clock-sec">120</div>
+        </div>
+        <div class="next-meta">
+          <strong>Next update</strong>
+          <span id="fetchState" class="state">Idle</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <article class="card kpi" style="animation-delay:.03s">
+        <div class="label">ARUBA ACCESS POINTS COVERAGE</div>
+        <div class="val">157</div>
+        <div class="note">Hospital-wide PoC AP footprint</div>
+        <div class="spark"><span style="--w:78%"></span></div>
+      </article>
+
+      <article class="card kpi" style="animation-delay:.07s">
+        <div class="label">Tracked Assets</div>
+        <div class="val">11</div>
+        <div class="note">PoC assets currently active</div>
+        <div class="spark"><span style="--w:62%"></span></div>
+      </article>
+
+      <article class="card kpi" style="animation-delay:.1s">
+        <div class="label">Activity Events</div>
+        <div class="val">3,918,359</div>
+        <div class="note">Jan 2026 to 05 Mar 2026</div>
+        <div class="spark"><span style="--w:92%"></span></div>
+      </article>
+
+      <article class="card wide-8" style="animation-delay:.14s">
+        <h2 class="widget-title"><span>Asset Mix & Repurposing Status</span></h2>
+        <div class="meta">
+          <span class="pill">Pulse Oximeter: 7 (63.6%)</span>
+          <span class="pill">Wheelchair: 4 (36.4%)</span>
+          <span class="pill good">5 tags re-purposed to pulse oximeter use from 03 Mar</span>
+        </div>
+
+        <div class="donut-wrap">
+          <div class="donut"></div>
+          <div class="bars">
+            <div class="row"><div>Pulse Oximeter</div><div class="track"><span style="--w:63.6%"></span></div><div>63.6%</div></div>
+            <div class="row"><div>Wheelchair</div><div class="track"><span style="--w:36.4%; background:linear-gradient(90deg,#b7a45d,#d0bb68)"></span></div><div>36.4%</div></div>
+          </div>
+        </div>
+
+        <div class="insight" style="margin-top:12px;">
+          <div class="box"><div class="k">Highest Activity Asset</div><div class="v">Pulseoximeter - ME241099</div></div>
+          <div class="box"><div class="k">Highest Known Location</div><div class="v">G57 Ortho OPD</div></div>
+        </div>
+      </article>
+
+      <article class="card wide-4" style="animation-delay:.18s">
+        <h2 class="widget-title"><span>Topline Signals</span></h2>
+        <div class="signal-grid">
+          <div class="signal">
+            <div>
+              <div class="name">Known Locations Covered</div>
+              <span class="chip">Coverage</span>
+            </div>
+            <div class="num">90</div>
+          </div>
+          <div class="signal">
+            <div>
+              <div class="name">Assets Reporting</div>
+              <span class="chip">Continuity</span>
+            </div>
+            <div class="num">11</div>
+          </div>
+          <div class="signal">
+            <div>
+              <div class="name">PoC Period Raw Location Events</div>
+              <span class="chip">Movement</span>
+            </div>
+            <div class="num">118,182</div>
+          </div>
+          <div class="signal">
+            <div>
+              <div class="name">Unknown Anchor Meaningful Events</div>
+              <span class="chip">Needs Mapping</span>
+            </div>
+            <div class="num">6,978</div>
+          </div>
+        </div>
+        <div class="table-note">Reference: Unknown Anchor Meaningful Events count only location-change entries into unknown zones (repeat same-location telemetry is excluded).</div>
+        <div class="table-note">Location Pressure reference: Score = 0.5 × Daily Total Visits + 0.3 × Assets Now + 0.2 × Peak Occupancy Today.</div>
+      </article>
+
+      <article class="card wide-8" style="animation-delay:.19s">
+        <h2 class="widget-title"><span>Jan 2026 - Mar 2026: Meaningful Mobility Trend</span></h2>
+        <div class="mobility-viz">
+          <div class="mobility-legend">
+            <span><span class="swatch known"></span>Known meaningful transitions</span>
+            <span><span class="swatch unknown"></span>Unknown-zone meaningful transitions</span>
+            <span>Bar length scaled by monthly total volume</span>
+          </div>
+
+          <div class="mobility-row">
+            <div class="mobility-month">Jan 2026<span>5,187 changes</span></div>
+            <div class="mobility-bar-wrap">
+              <div class="mobility-bar-track">
+                <div class="mobility-bar" style="--w:94%">
+                  <span class="known" style="--s:48.1%"></span>
+                  <span class="unknown" style="--s:51.9%"></span>
+                </div>
+              </div>
+              <div class="mobility-metrics"><span>Known 48.1%</span><span>Unknown 51.9%</span></div>
+            </div>
+            <div class="mobility-note">Baseline month with mixed mapped vs unknown transitions.</div>
+          </div>
+
+          <div class="mobility-row">
+            <div class="mobility-month">Feb 2026<span>5,515 changes</span></div>
+            <div class="mobility-bar-wrap">
+              <div class="mobility-bar-track">
+                <div class="mobility-bar" style="--w:100%">
+                  <span class="known" style="--s:48.9%"></span>
+                  <span class="unknown" style="--s:51.1%"></span>
+                </div>
+              </div>
+              <div class="mobility-metrics"><span>Known 48.9%</span><span>Unknown 51.1%</span></div>
+            </div>
+            <div class="mobility-note">Volume improved while unknown share stayed stable.</div>
+          </div>
+
+          <div class="mobility-row">
+            <div class="mobility-month">Mar 2026 (MTD)<span>1,928 changes</span></div>
+            <div class="mobility-bar-wrap">
+              <div class="mobility-bar-track">
+                <div class="mobility-bar" style="--w:35%">
+                  <span class="known" style="--s:23.9%"></span>
+                  <span class="unknown" style="--s:76.1%"></span>
+                </div>
+              </div>
+              <div class="mobility-metrics"><span>Known 23.9%</span><span>Unknown 76.1%</span></div>
+            </div>
+            <div class="mobility-note">Higher unknown proportion indicates mapping/coverage gap concentration.</div>
+          </div>
+        </div>
+        <div class="table-note">Source logic: meaningful event = location changed from previous reading for the same asset (not repeated heartbeat/location pings).</div>
+      </article>
+
+      <article class="card wide-4" style="animation-delay:.2s">
+        <h2 class="widget-title"><span>Unknown Zone Mix - Today</span></h2>
+        <div class="summary-grid">
+          <div class="mini-donut"></div>
+          <div class="compact-list">
+            <div class="item"><strong>e82689cda1ee</strong>: 12 meaningful events, <strong># Assets: 4</strong></div>
+            <div class="item"><strong>e82689cdc1da</strong>: 11 meaningful events, <strong># Assets: 4</strong></div>
+            <div class="item"><strong>e82689cdb502</strong>: 8 meaningful events, <strong># Assets: 5</strong></div>
+            <div class="item"><strong>e82689cdc058</strong>: 7 meaningful events, <strong># Assets: 3</strong></div>
+            <div class="item"><strong>Others</strong>: 17 meaningful events across 4 anchors</div>
+          </div>
+        </div>
+        <div class="table-note">Why this matters: fixing top 2 unknown anchors alone addresses ~42% of today's unknown meaningful transitions.</div>
+      </article>
+
+      <article class="card wide-6 table-card" style="animation-delay:.2s">
+        <h2 class="widget-title"><span>Today: Asset Tracking Snapshot (Recent Telemetry)</span></h2>
+        <table data-page-size="7">
+          <thead><tr><th>Asset Label</th><th>Current Location</th><th>Arrived At</th><th>Last Tracked</th><th>Stale Alert</th></tr></thead>
+          <tbody id="todayAssetSnapshotBody"></tbody>
+        </table>
+        <div id="todayAssetSnapshotPager" class="table-pager"></div>
+      </article>
+
+      <article class="card wide-6" style="animation-delay:.24s">
+        <h2 class="widget-title"><span>Today: Location Utilization (Recent Telemetry)</span></h2>
+        <div class="util-layout">
+          <div class="util-bars">
+            <div class="util-row">
+              <div class="loc">G37-Billing room</div>
+              <div class="util-track"><span style="--w:100%"></span></div>
+              <div class="util-num">5 visits</div>
+              <span class="delta up">+122%</span>
+            </div>
+            <div class="util-row">
+              <div class="loc">G57-Ortho OPD</div>
+              <div class="util-track"><span style="--w:60%"></span></div>
+              <div class="util-num">3 visits</div>
+              <span class="delta up">+33%</span>
+            </div>
+            <div class="util-row">
+              <div class="loc">G103-Emergency corridor</div>
+              <div class="util-track"><span style="--w:40%"></span></div>
+              <div class="util-num">2 visits</div>
+              <span class="delta down">-11%</span>
+            </div>
+            <div class="util-row">
+              <div class="loc">G55-Medicine Unit 2 OPD</div>
+              <div class="util-track"><span style="--w:40%"></span></div>
+              <div class="util-num">2 visits</div>
+              <span class="delta down">-11%</span>
+            </div>
+            <div class="util-row">
+              <div class="loc">G65-ENT OPD</div>
+              <div class="util-track"><span style="--w:40%"></span></div>
+              <div class="util-num">2 visits</div>
+              <span class="delta down">-11%</span>
+            </div>
+            <div class="util-row">
+              <div class="loc">G74-Corridor outside OPD</div>
+              <div class="util-track"><span style="--w:40%"></span></div>
+              <div class="util-num">2 visits</div>
+              <span class="delta down">-11%</span>
+            </div>
+            <div class="util-row">
+              <div class="loc">F5 - Near lift no. 4 and 5</div>
+              <div class="util-track"><span style="--w:40%"></span></div>
+              <div class="util-num">2 visits</div>
+              <span class="delta down">-11%</span>
+            </div>
+            <div class="util-row">
+              <div class="loc">G63-Psychiatry Waiting area</div>
+              <div class="util-track"><span style="--w:20%"></span></div>
+              <div class="util-num">1 visit</div>
+              <span class="delta down">-56%</span>
+            </div>
+          </div>
+
+          <aside class="util-mix">
+            <div class="util-donut"></div>
+            <div class="util-legend">
+              <div class="item"><span><span class="dot" style="background:#292d6e"></span> G37-Billing room</span><strong>27.8%</strong></div>
+              <div class="item"><span><span class="dot" style="background:#4a5292"></span> G57-Ortho OPD</span><strong>16.7%</strong></div>
+              <div class="item"><span><span class="dot" style="background:#6a74b4"></span> G103-Emergency corridor</span><strong>11.1%</strong></div>
+              <div class="item"><span><span class="dot" style="background:#8c96ca"></span> G55-Medicine Unit 2 OPD</span><strong>11.1%</strong></div>
+              <div class="item"><span><span class="dot" style="background:#aeb5dd"></span> G65-ENT OPD</span><strong>11.1%</strong></div>
+              <div class="item"><span><span class="dot" style="background:#d0bb68"></span> G74-Corridor outside OPD</span><strong>11.1%</strong></div>
+              <div class="item"><span><span class="dot" style="background:#dfcf95"></span> F5 - Near lift 4/5</span><strong>11.1%</strong></div>
+            </div>
+          </aside>
+        </div>
+        <div class="util-size-wrap">
+          <div class="util-size-title">Visit intensity (size representation)</div>
+          <div class="util-size-grid">
+            <div class="util-size-item"><span class="util-size-bubble" style="--s:30px"></span><div><strong>G37-Billing room</strong><span>5 visits</span></div></div>
+            <div class="util-size-item"><span class="util-size-bubble" style="--s:24px"></span><div><strong>G57-Ortho OPD</strong><span>3 visits</span></div></div>
+            <div class="util-size-item"><span class="util-size-bubble" style="--s:20px"></span><div><strong>G103-Emergency corridor</strong><span>2 visits</span></div></div>
+            <div class="util-size-item"><span class="util-size-bubble" style="--s:20px"></span><div><strong>G55-Medicine Unit 2 OPD</strong><span>2 visits</span></div></div>
+            <div class="util-size-item"><span class="util-size-bubble" style="--s:20px"></span><div><strong>G65-ENT OPD</strong><span>2 visits</span></div></div>
+            <div class="util-size-item"><span class="util-size-bubble" style="--s:20px"></span><div><strong>G74-Corridor outside OPD</strong><span>2 visits</span></div></div>
+            <div class="util-size-item"><span class="util-size-bubble" style="--s:20px"></span><div><strong>F5 - Near lift no. 4 and 5</strong><span>2 visits</span></div></div>
+            <div class="util-size-item"><span class="util-size-bubble" style="--s:12px"></span><div><strong>G63-Psychiatry Waiting area</strong><span>1 visit</span></div></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card wide-6 table-card" style="animation-delay:.22s">
+        <h2 class="widget-title"><span>Top Assets by Activity</span></h2>
+        <table>
+          <thead><tr><th>Asset Label</th><th>Activity Events</th><th>Active Days</th><th>Use Level</th></tr></thead>
+          <tbody>
+            <tr><td>Pulseoximeter - ME241099 (ex Wheelchair21)</td><td>356,970</td><td>56</td><td>Very High</td></tr>
+            <tr><td>Pulseoximeter - ME21791 (ex Wheelchair32)</td><td>341,166</td><td>54</td><td>Very High</td></tr>
+            <tr><td>Pulseoximeter - ME21788 (ex Wheelchair4)</td><td>291,901</td><td>60</td><td>High</td></tr>
+            <tr><td>Wheelchair (Blue) - 6</td><td>288,735</td><td>53</td><td>High</td></tr>
+            <tr><td>Pulseoximeter - ME21790 (ex Wheelchair25)</td><td>271,938</td><td>56</td><td>High</td></tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article class="card wide-6 table-card" style="animation-delay:.26s">
+        <h2 class="widget-title"><span>Top Known Locations by Activity</span></h2>
+        <table>
+          <thead><tr><th>Location</th><th>Activity Events</th></tr></thead>
+          <tbody>
+            <tr><td>G57-Ortho OPD (Ground Floor)</td><td>6,237</td></tr>
+            <tr><td>G74-Corridor outside OPD Sample collection</td><td>4,174</td></tr>
+            <tr><td>G55-Medicine Unit 2 OPD</td><td>3,171</td></tr>
+            <tr><td>G40-SS Silver jubilee block outside Room 18</td><td>2,702</td></tr>
+            <tr><td>G37-Billing room (Ground Floor)</td><td>2,622</td></tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article class="card wide-6 table-card" style="animation-delay:.3s">
+        <h2 class="widget-title"><span>Swap Impact Since 03 Mar</span></h2>
+        <table>
+          <thead><tr><th>Pre-swap Wheelchair</th><th>Post-swap Pulseoximeter</th><th>Post-swap Daily Avg</th><th>Increase</th></tr></thead>
+          <tbody>
+            <tr><td>Wheelchair 21</td><td>Pulseoximeter - ME241099</td><td>19,342/day</td><td>+294.7%</td></tr>
+            <tr><td>Wheelchair 32</td><td>Pulseoximeter - ME21791</td><td>15,753/day</td><td>+226.9%</td></tr>
+            <tr><td>Wheelchair 25</td><td>Pulseoximeter - ME21790</td><td>12,213/day</td><td>+216.6%</td></tr>
+            <tr><td>Wheelchair 16</td><td>Pulseoximeter - ME240200</td><td>11,479/day</td><td>+79.7%</td></tr>
+            <tr><td>Wheelchair 4</td><td>Pulseoximeter - ME21788</td><td>5,811/day</td><td>+29.1%</td></tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article class="card wide-6 table-card" style="animation-delay:.34s">
+        <h2 class="widget-title"><span>Top Locations in Active Use</span></h2>
+        <table>
+          <thead><tr><th>Location Label</th><th>Activity Events</th><th>Utilization Band</th></tr></thead>
+          <tbody>
+            <tr><td>G29-USG Doppler (waiting area)</td><td>1,096</td><td>Very High</td></tr>
+            <tr><td>G37-Billing room</td><td>1,054</td><td>Very High</td></tr>
+            <tr><td>G30-USG Doppler (outside room no.1)</td><td>854</td><td>High</td></tr>
+            <tr><td>G57-Ortho OPD</td><td>1,043</td><td>Very High</td></tr>
+            <tr><td>G74-Corridor outside OPD Sample collection</td><td>906</td><td>High</td></tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article class="card wide-12" style="animation-delay:.36s">
+        <h2 class="widget-title"><span>Executive Summary & Next-Gen Expansion Roadmap</span></h2>
+        <div class="compact-list">
+          <div class="item"><strong>What went great:</strong> 11/11 assets reported location data, with 12,629 meaningful location transitions captured since Jan 2026 and strong repeat utilization in OPD and billing corridors.</div>
+          <div class="item"><strong>Operational gaps identified:</strong> 6,978 meaningful transitions still ended in unknown zones, and 2 assets had no meaningful movement for >24h (1 asset >7 days), indicating parked/maintenance or process bottlenecks.</div>
+          <div class="item"><strong>Immediate PoC hardening (0-30 days):</strong> prioritize unknown-anchor mapping (top 4 anchors), introduce end-of-day asset assembly reconciliation, and create exception queues for parked assets by no-movement bands (>24h, >72h, >7d).</div>
+          <div class="item"><strong>Next-gen Asset + Porter platform (30-90 days):</strong> add digital request-book-assign workflows, SLA timers, and closed-loop confirmation so equipment movement is demand-driven and auditable.</div>
+          <div class="item"><strong>Clinical rapid response highlight:</strong> BLE-based proximity lookup for Code Blue can identify nearest eligible asset/personnel faster, supporting SJRI expectation for emergency readiness and safer asset utilization.</div>
+          <div class="item"><strong>Management KPI set for scale:</strong> meaningful mobility rate, unknown-zone share, parked-asset ratio, retrieval SLA adherence, and day-close reconciliation compliance by department.</div>
+        </div>
+      </article>
+
+    </section>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var DATA_META_URL = './sjri_live_data.json';
+      var TWO_MIN = 120000;
+      var countdownSec = 120;
+      var defaultPageSize = 5;
+      var tables = document.querySelectorAll('.table-card table');
+
+      tables.forEach(function (table) {
+        var tbody = table.tBodies[0];
+        if (!tbody) return;
+
+        var pageSize = parseInt(table.getAttribute('data-page-size') || defaultPageSize, 10);
+        if (!Number.isFinite(pageSize) || pageSize < 1) pageSize = defaultPageSize;
+
+        var rows = Array.from(tbody.querySelectorAll('tr'));
+        if (!rows.length) return;
+
+        var colCount = (table.tHead && table.tHead.rows[0] && table.tHead.rows[0].cells.length) || (rows[0].cells ? rows[0].cells.length : 1);
+        var totalPages = Math.ceil(rows.length / pageSize);
+        var currentPage = 0;
+        var prevBtn = null;
+        var nextBtn = null;
+        var pageInfo = null;
+
+        function renderPage(page) {
+          tbody.innerHTML = '';
+          var start = page * pageSize;
+          var pageRows = rows.slice(start, start + pageSize);
+
+          pageRows.forEach(function (row) {
+            tbody.appendChild(row);
+          });
+
+          for (var i = pageRows.length; i < pageSize; i++) {
+            var padTr = document.createElement('tr');
+            padTr.className = 'pad-row';
+            var padTd = document.createElement('td');
+            padTd.colSpan = colCount;
+            padTd.innerHTML = '&nbsp;';
+            padTr.appendChild(padTd);
+            tbody.appendChild(padTr);
+          }
+
+          if (pageInfo) {
+            pageInfo.textContent = 'Page ' + (currentPage + 1) + ' / ' + totalPages;
+            prevBtn.disabled = currentPage === 0;
+            nextBtn.disabled = currentPage === totalPages - 1;
+          }
+        }
+
+        if (totalPages > 1) {
+          var pager = document.createElement('div');
+          pager.className = 'table-pager';
+
+          prevBtn = document.createElement('button');
+          prevBtn.type = 'button';
+          prevBtn.textContent = 'Prev';
+
+          pageInfo = document.createElement('span');
+          pageInfo.className = 'page-info';
+
+          nextBtn = document.createElement('button');
+          nextBtn.type = 'button';
+          nextBtn.textContent = 'Next';
+
+          prevBtn.addEventListener('click', function () {
+            if (currentPage > 0) {
+              currentPage -= 1;
+              renderPage(currentPage);
+            }
+          });
+
+          nextBtn.addEventListener('click', function () {
+            if (currentPage < totalPages - 1) {
+              currentPage += 1;
+              renderPage(currentPage);
+            }
+          });
+
+          pager.appendChild(prevBtn);
+          pager.appendChild(pageInfo);
+          pager.appendChild(nextBtn);
+          table.insertAdjacentElement('afterend', pager);
+        }
+
+        renderPage(currentPage);
+      });
+
+      function updateLastUpdated(text) {
+        var el = document.getElementById('lastUpdated');
+        if (el) {
+          el.textContent = 'Last updated: ' + text + ' | Source: IoT platform telemetry';
+        }
+      }
+
+      function parseTimeValue(raw) {
+        if (!raw) return 0;
+        var text = String(raw).replace(/\s*IST\s*$/i, '').trim();
+
+        var m = text.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})(?:,?\s*(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?)?/i);
+        if (!m) return 0;
+        var dd = Number(m[1]);
+        var mm = Number(m[2]);
+        var yyyy = Number(m[3]);
+        if (yyyy < 100) yyyy += 2000;
+        var hh = Number(m[4] || 0);
+        var min = Number(m[5] || 0);
+        var sec = Number(m[6] || 0);
+        var mer = (m[7] || '').toLowerCase();
+        if (mer === 'pm' && hh < 12) hh += 12;
+        if (mer === 'am' && hh === 12) hh = 0;
+
+        var IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+        var ts = Date.UTC(yyyy, mm - 1, dd, hh, min, sec) - IST_OFFSET_MS;
+        if (Number.isFinite(ts) && ts > 0) return ts;
+
+        var fallback = Date.parse(text);
+        return Number.isFinite(fallback) ? fallback : 0;
+      }
+
+      function renderTodayAssetSnapshot(data) {
+        var body = document.getElementById('todayAssetSnapshotBody');
+        var pager = document.getElementById('todayAssetSnapshotPager');
+        if (!body) return;
+        var rows = Array.isArray(data && data.today_asset_tracking) ? data.today_asset_tracking.slice() : [];
+        rows.sort(function (a, b) { return parseTimeValue(b.last_tracked_ist) - parseTimeValue(a.last_tracked_ist); });
+        var pageSize = 7;
+        var totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+        var page = 0;
+
+        if (!rows.length) {
+          body.innerHTML = '<tr><td colspan="5">No recent telemetry snapshot available.</td></tr>';
+          if (pager) pager.innerHTML = '';
+          return;
+        }
+
+        function computeDelayHours(lastTrackedRaw, fallbackHours) {
+          var ts = parseTimeValue(lastTrackedRaw);
+          if (ts > 0) {
+            var h = (Date.now() - ts) / 3600000;
+            return h >= 0 ? h : 0;
+          }
+          var f = Number(fallbackHours || 0);
+          return Number.isFinite(f) && f >= 0 ? f : 0;
+        }
+
+        function staleFromDelay(hours) {
+          if (!Number.isFinite(hours)) return { cls: 'stale-ok', msg: 'Healthy: delay unavailable' };
+          if (hours < 5) return { cls: 'stale-ok', msg: 'Healthy: ' + hours.toFixed(1) + 'h delay' };
+          if (hours < 12) return { cls: 'stale-warn', msg: 'Watch: ' + hours.toFixed(1) + 'h since last seen' };
+          if (hours < 24) return { cls: 'stale-crit', msg: 'Stale: ' + hours.toFixed(1) + 'h since last seen' };
+          var days = Math.floor(hours / 24);
+          return { cls: 'stale-crit', msg: 'Critical: ' + days + ' ' + (days === 1 ? 'day' : 'days') + ' delay' };
+        }
+
+        function paint() {
+          var slice = rows.slice(page * pageSize, (page + 1) * pageSize);
+          body.innerHTML = slice.map(function (r) {
+            var delayHours = computeDelayHours(r.last_tracked_ist, r.hours_since_seen);
+            var stale = staleFromDelay(delayHours);
+            return '<tr>' +
+              '<td>' + (r.asset_label || '-') + '</td>' +
+              '<td>' + (r.current_location || '-') + '</td>' +
+              '<td>' + (r.arrived_at_ist || '-') + '</td>' +
+              '<td>' + (r.last_tracked_ist || '-') + '</td>' +
+              '<td><span class="stale-pill ' + stale.cls + '">' + stale.msg + '</span></td>' +
+            '</tr>';
+          }).join('');
+
+          for (var i = slice.length; i < pageSize; i++) {
+            body.insertAdjacentHTML('beforeend', '<tr class="pad-row"><td colspan="5">&nbsp;</td></tr>');
+          }
+
+          if (!pager) return;
+          if (rows.length > pageSize) {
+            pager.innerHTML = '<button type="button" ' + (page === 0 ? 'disabled' : '') + ' id="snapshotPrev">Prev</button>' +
+              '<span class="page-info">Page ' + (page + 1) + ' / ' + totalPages + '</span>' +
+              '<button type="button" ' + (page === totalPages - 1 ? 'disabled' : '') + ' id="snapshotNext">Next</button>';
+            document.getElementById('snapshotPrev').onclick = function () {
+              if (page > 0) {
+                page -= 1;
+                paint();
+              }
+            };
+            document.getElementById('snapshotNext').onclick = function () {
+              if (page < totalPages - 1) {
+                page += 1;
+                paint();
+              }
+            };
+          } else {
+            pager.innerHTML = '';
+          }
+        }
+
+        paint();
+      }
+
+      function tickCountdown() {
+        var secEl = document.getElementById('clockSec');
+        var ring = document.getElementById('clockProgress');
+        if (!secEl || !ring) return;
+        var circumference = 2 * Math.PI * 18;
+        countdownSec = Math.max(0, countdownSec - 1);
+        var progress = countdownSec / 120;
+        ring.style.strokeDasharray = String(circumference);
+        ring.style.strokeDashoffset = String(circumference * (1 - progress));
+        secEl.textContent = String(countdownSec);
+
+        var stateEl = document.getElementById('fetchState');
+        if (countdownSec <= 10 && stateEl && stateEl.textContent !== 'Fetching now...') {
+          stateEl.textContent = 'Refreshing soon...';
+        }
+      }
+
+      function fetchMetaAndUpdateClock() {
+        var stateEl = document.getElementById('fetchState');
+        if (stateEl) stateEl.textContent = 'Fetching now...';
+
+        fetch(DATA_META_URL + '?t=' + Date.now(), { cache: 'no-store' })
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            updateLastUpdated((data && data.generated_at_ist) ? data.generated_at_ist : new Date().toLocaleString('en-IN', { hour12: false }) + ' IST');
+            renderTodayAssetSnapshot(data);
+            countdownSec = 120;
+            if (stateEl) stateEl.textContent = 'Live';
+          })
+          .catch(function () {
+            updateLastUpdated('datasource unavailable');
+            renderTodayAssetSnapshot({ today_asset_tracking: [] });
+            if (stateEl) stateEl.textContent = 'Retrying...';
+          });
+      }
+
+      fetchMetaAndUpdateClock();
+      setInterval(fetchMetaAndUpdateClock, TWO_MIN);
+      setInterval(tickCountdown, 1000);
+      setInterval(function () {
+        var nextUrl = window.location.pathname + '?t=' + Date.now();
+        window.location.replace(nextUrl);
+      }, TWO_MIN);
+    });
+  </script>
+</body>
+</html>

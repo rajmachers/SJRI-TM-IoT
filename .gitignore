@@ -1,0 +1,11 @@
+# Generated env file — contains credentials, never commit
+server/docker/.env
+
+# Runtime-generated JSON data files
+server/live/*.json
+
+# Log files
+server/live/*.log
+
+# macOS
+.DS_Store

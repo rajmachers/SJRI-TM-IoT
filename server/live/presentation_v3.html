@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>SJRI PoC - Presentation v3 (Dwell & Transition Intelligence)</title>
+  <style>
+    :root {
+      --bg:#eff1f8; --card:#fff; --ink:#11162f; --muted:#5d5d66; --blue:#292d6e; --gold:#d0bb68; --line:#e2e8f0;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+    .wrap{max-width:1460px;margin:0 auto;padding:24px}
+    .hero{background:linear-gradient(120deg,#1f245f 0%,#292d6e 70%,#d0bb68 100%);color:#fff;border-radius:18px;padding:22px 26px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:14px}
+    .hero h1{margin:0 0 6px;font-size:36px}
+    .hero p{margin:0;font-size:15px;opacity:.95}
+    .hero-left{min-width:0}
+    .hero-sub{margin-top:4px;font-size:13px;opacity:.92}
+    .next-update{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 10px 7px 8px;backdrop-filter:blur(2px);flex-shrink:0}
+    .clock-wrap{width:42px;height:42px;position:relative}
+    .clock-wrap svg{width:42px;height:42px;transform:rotate(-90deg)}
+    .clock-bg{fill:none;stroke:rgba(255,255,255,.25);stroke-width:4}
+    .clock-progress{fill:none;stroke:#fff;stroke-width:4;stroke-linecap:round;stroke-dasharray:113.1;stroke-dashoffset:0;transition:stroke-dashoffset 1s linear}
+    .clock-wrap .clock-sec{position:absolute;inset:0;display:grid;place-items:center;font-size:11px;font-weight:800;color:#fff}
+    .next-meta{font-size:11px;line-height:1.3;color:#fff}
+    .next-meta strong{display:block;font-size:12px;letter-spacing:.2px}
+    .next-meta .state{opacity:.95}
+    .period-toggle{
+      display:flex;
+      gap:8px;
+      margin:0 0 14px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .period-toggle .lbl{font-size:12px;color:#5d5d66;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+    .period-toggle button{
+      border:1px solid #cfd8ea;
+      background:#fff;
+      color:#292d6e;
+      border-radius:999px;
+      padding:6px 12px;
+      font-size:12px;
+      font-weight:700;
+      cursor:pointer;
+    }
+    .period-toggle button.active{
+      background:#292d6e;
+      color:#fff;
+      border-color:#292d6e;
+    }
+    .toggle-block{display:grid;gap:8px;margin-bottom:8px}
+    .toggle-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .toggle-row .lbl{font-size:11px;color:#5d5d66;text-transform:uppercase;font-weight:700;letter-spacing:.35px;min-width:98px}
+    .toggle-row button{border:1px solid #cfd8ea;background:#fff;color:#292d6e;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer}
+    .toggle-row button.active{background:#292d6e;color:#fff;border-color:#292d6e}
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+    .kpi{grid-column:span 3}
+    .wide-4{grid-column:span 4}
+    .wide-6{grid-column:span 6}
+    .wide-8{grid-column:span 8}
+    .wide-12{grid-column:span 12}
+    .title{margin:-14px -14px 10px;padding:10px 12px;border-radius:14px 14px 0 0;background:linear-gradient(90deg,#23285f 0%,#292d6e 72%,#d0bb68 100%);color:#fff;font-size:17px;font-weight:700}
+    .kpi .label{font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:700}
+    .kpi .val{margin-top:6px;font-size:34px;font-weight:800}
+    .kpi .note{margin-top:4px;font-size:12px;color:#6b7395}
+    table{width:100%;border-collapse:collapse;background:#f9fafc;font-size:13px}
+    th,td{padding:8px;border-bottom:1px solid #e6ebf6;text-align:left;vertical-align:top;color:#2b3465}
+    th{font-size:11px;text-transform:uppercase;background:#eef2fb;color:#4a567c}
+    .donut-wrap{display:grid;grid-template-columns:160px 1fr;gap:12px;align-items:center}
+    .donut{width:140px;height:140px;border-radius:50%;background:conic-gradient(#292d6e 0 21.8%,#4a5292 21.8% 41.8%,#6a74b4 41.8% 56.3%,#8c96ca 56.3% 69.0%,#d0bb68 69% 100%);position:relative}
+    .donut:after{content:"Today Mix";position:absolute;inset:20px;border-radius:50%;background:#fff;display:grid;place-items:center;color:var(--muted);font-size:12px;font-weight:700}
+    .legend{display:grid;gap:6px}
+    .legend .row{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#2b3465;border:1px solid var(--line);background:#f8fafc;border-radius:8px;padding:6px 8px}
+    .dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px}
+    .note{margin-top:8px;font-size:12px;color:var(--muted);line-height:1.35}
+    .list{display:grid;gap:8px}
+    .list .item{border:1px solid var(--line);border-left:4px solid #292d6e;border-radius:9px;padding:8px 10px;background:#f8fafc;font-size:13px;color:#2b3465}
+    @media (max-width:1100px){.kpi,.wide-4,.wide-6,.wide-8,.wide-12{grid-column:span 12}.donut-wrap{grid-template-columns:1fr}.hero{align-items:flex-start;flex-direction:column}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <div class="hero-left">
+        <h1>SJRI PoC v3 - Dwell & Transition Intelligence</h1>
+        <p id="lastUpdated">Last updated: loading... | Source: IoT platform telemetry</p>
+        <p class="hero-sub">Analytics model: asset considered in a zone only when stay duration is ≥5 minutes (pass-through excluded)</p>
+      </div>
+      <div class="next-update" aria-live="polite">
+        <div class="clock-wrap">
+          <svg viewBox="0 0 42 42" aria-hidden="true">
+            <circle class="clock-bg" cx="21" cy="21" r="18"></circle>
+            <circle id="clockProgress" class="clock-progress" cx="21" cy="21" r="18"></circle>
+          </svg>
+          <div id="clockSec" class="clock-sec">120</div>
+        </div>
+        <div class="next-meta">
+          <strong>Next update</strong>
+          <span id="fetchState" class="state">Idle</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="period-toggle" aria-label="Period toggle">
+      <span class="lbl">Toggle View</span>
+      <button type="button" data-main-period-btn="weekly">Weekly</button>
+      <button type="button" data-main-period-btn="monthly">Monthly</button>
+      <button type="button" data-main-period-btn="overall" class="active">Overall</button>
+    </section>
+
+    <section class="grid">
+      <article class="card kpi">
+        <div class="label">Raw Location Records</div>
+        <div class="val">118,492</div>
+        <div class="note">All telemetry location records in PoC period</div>
+      </article>
+      <article class="card kpi">
+        <div class="label">Valid Stays (≥5 min)</div>
+        <div class="val">11,951</div>
+        <div class="note">Noise-filtered zone occupancy events</div>
+      </article>
+      <article class="card kpi">
+        <div class="label">Average Zone Dwell</div>
+        <div class="val">81.5 min</div>
+        <div class="note">Median: 14.2 min (long-tail utilization)</div>
+      </article>
+      <article class="card kpi">
+        <div class="label">Average Transition Gap</div>
+        <div class="val">7.7 min</div>
+        <div class="note">Median: 0.3 min; indicates frequent short hops</div>
+      </article>
+
+      <article class="card wide-6">
+        <h2 class="title">Period Blocks - Movement KPIs</h2>
+        <table>
+          <thead><tr><th>Period</th><th>Location-to-Location Moves</th><th>Avg Reach Time (min)</th><th>Avg Stayed Time (min)</th><th>Read</th></tr></thead>
+          <tbody>
+            <tr data-period="weekly"><td>Weekly (last 7d)</td><td>77</td><td>21.4</td><td>19.8</td><td>Recent flow is faster with shorter destination stays.</td></tr>
+            <tr data-period="monthly"><td>Monthly (last 30d)</td><td>188</td><td>19.4</td><td>24.3</td><td>Higher movement volume with moderate stay depth.</td></tr>
+            <tr data-period="overall"><td>Overall (Jan 2026 - date)</td><td>294</td><td>21.1</td><td>27.0</td><td>Longer average stay across full PoC timeline.</td></tr>
+          </tbody>
+        </table>
+        <div class="note">Movement counted only when destination stay is ≥5 minutes, so pass-by/corridor pings are excluded.</div>
+      </article>
+
+      <article class="card wide-6">
+        <h2 class="title">End-of-Business Assembly Point Candidate</h2>
+        <table>
+          <thead><tr><th>Period</th><th>Candidate Zone</th><th>Arrivals</th><th># Assets</th></tr></thead>
+          <tbody>
+            <tr data-period="weekly"><td>Weekly</td><td>UK - Zone 5 (484ae9c4ce26)</td><td>3</td><td>3</td></tr>
+            <tr data-period="monthly"><td>Monthly</td><td>UK - Zone 6 (4e35c3c600)</td><td>7</td><td>5</td></tr>
+            <tr data-period="overall"><td>Overall</td><td>UK - Zone 6 (4e35c3c600)</td><td>10</td><td>6</td></tr>
+          </tbody>
+        </table>
+        <div class="note">Assumption rule: arrivals between 6:00 PM and 8:30 AM IST are treated as end-of-business parking behavior; zone with the highest non-business-hour asset presence is flagged as assembly point candidate.</div>
+      </article>
+
+      <article class="card wide-12">
+        <h2 class="title">Period-wise Top Location-to-Location Flows</h2>
+        <table>
+          <thead><tr><th>Period</th><th>From Zone</th><th>To Zone</th><th>Moves</th><th>Avg Reach (min)</th><th>Avg Stayed (min)</th></tr></thead>
+          <tbody>
+            <tr data-period="weekly"><td>Weekly</td><td>UK - Zone 3 (e82689cdb502)</td><td>UK - Zone 2 (e82689cdc1da)</td><td>15</td><td>0.3</td><td>32.5</td></tr>
+            <tr data-period="weekly"><td>Weekly</td><td>UK - Zone 4 (e82689cdc058)</td><td>UK - Zone 2 (e82689cdc1da)</td><td>8</td><td>1.1</td><td>19.0</td></tr>
+            <tr data-period="monthly"><td>Monthly</td><td>UK - Zone 3 (e82689cdb502)</td><td>UK - Zone 2 (e82689cdc1da)</td><td>24</td><td>0.3</td><td>28.7</td></tr>
+            <tr data-period="monthly"><td>Monthly</td><td>UK - Zone 3 (e82689cdb502)</td><td>UK - Zone 1 (e82689cda1ee)</td><td>9</td><td>8.0</td><td>23.8</td></tr>
+            <tr data-period="overall"><td>Overall</td><td>UK - Zone 7 (6cc49fc773f6)</td><td>UK - Zone 6 (4e35c3c600)</td><td>14</td><td>11.0</td><td>18.5</td></tr>
+            <tr data-period="overall"><td>Overall</td><td>UK - Zone 8 (6cc49fc1b79e)</td><td>UK - Zone 9 (6cc49fc19dfa)</td><td>11</td><td>2.1</td><td>12.8</td></tr>
+          </tbody>
+        </table>
+        <div class="note">Unknown locations are presented as readable aliases in the format UK - Zone N (anchorId).</div>
+      </article>
+
+      <article class="card wide-12">
+        <h2 class="title">Asset-wise Analytics (Most Visited, Move Time, Stay, Assembly)</h2>
+        <div class="toggle-block" id="assetToggleBlock">
+          <div class="toggle-row">
+            <span class="lbl">Period</span>
+            <button type="button" data-asset-period="weekly">Weekly</button>
+            <button type="button" data-asset-period="monthly">Monthly</button>
+            <button type="button" data-asset-period="overall" class="active">Overall</button>
+          </div>
+          <div class="toggle-row">
+            <span class="lbl">Asset Type</span>
+            <button type="button" data-asset-type="all" class="active">All</button>
+            <button type="button" data-asset-type="Pulseoximeter">Pulseoximeter</button>
+            <button type="button" data-asset-type="Wheel Chair">Wheel Chair</button>
+          </div>
+        </div>
+        <table id="assetWiseTable">
+          <thead><tr><th>Asset</th><th>Type</th><th>Most Visited Location</th><th>Avg Moves/Calendar Day</th><th>Avg Stay (min)</th><th>Likely Assembly Point</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div class="note">Reconciliation rule: Avg Moves/Calendar Day uses full period days (including zero-move days), so period totals align exactly with summed asset movement rates.</div>
+      </article>
+
+      <article class="card wide-12">
+        <h2 class="title">Top 20 Locations (Total Visits, Unique Assets, Avg Stay, Avg Occupancy)</h2>
+        <div class="toggle-block" id="locationToggleBlock">
+          <div class="toggle-row">
+            <span class="lbl">Period</span>
+            <button type="button" data-loc-period="jan">Jan</button>
+            <button type="button" data-loc-period="feb">Feb</button>
+            <button type="button" data-loc-period="overall" class="active">Overall</button>
+          </div>
+          <div class="toggle-row">
+            <span class="lbl">Asset Type</span>
+            <button type="button" data-loc-type="all" class="active">All</button>
+            <button type="button" data-loc-type="Pulseoximeter">Pulseoximeter</button>
+            <button type="button" data-loc-type="Wheel Chair">Wheel Chair</button>
+          </div>
+        </div>
+        <table id="locationTopTable">
+          <thead><tr><th>Location</th><th>Asset Type</th><th>Total Visits</th><th>Unique Assets</th><th>Avg Stay (min)</th><th>Avg Occupancy</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div class="note">Total Visits counts valid location stay-events (≥5 min) from telemetry; this reflects repeat arrivals and location demand.</div>
+      </article>
+
+      <article class="card wide-12">
+        <h2 class="title">Revised Analytics Perspective & Recommendations</h2>
+        <div class="list">
+          <div class="item"><strong>Perspective shift:</strong> Treat unknown anchors as unmapped operational spaces, then progressively normalize with alias-to-room master mapping.</div>
+          <div class="item"><strong>Dwell governance:</strong> Keep 5-minute minimum stay rule to avoid corridor pass-through inflation and improve operational trust.</div>
+          <div class="item"><strong>Utilization optimization:</strong> Flag assets with no meaningful zone change >24h / >72h / >7d for maintenance, parking discipline, or reassignment.</div>
+          <div class="item"><strong>Flow orchestration:</strong> Integrate with next-gen Asset + Porter scheduling (book/assign/dispatch/return) using zone dwell + transition SLA.</div>
+          <div class="item"><strong>Day-close control:</strong> Add assembly-point reconciliation so high-value assets are parked in expected zones except emergency overrides.</div>
+          <div class="item"><strong>Emergency readiness:</strong> Continue Code Blue BLE proximity logic to identify nearest resources and improve response confidence.</div>
+          <div class="item"><strong>Analytics blocks for final selection:</strong> (A) movement volume + reach time + stay time by period, (B) top transition corridors by period, (C) after-hours assembly-point majority, (D) unknown-zone alias conversion status, (E) parked-assets by no-change band (&gt;24h, &gt;72h, &gt;7d).</div>
+        </div>
+      </article>
+    </section>
+  </div>
+  <script>
+    (function () {
+      const buttons = Array.from(document.querySelectorAll('[data-main-period-btn]'));
+      const rows = Array.from(document.querySelectorAll('tr[data-period]'));
+      const ASSET_DATA_URL = './v3_asset_metrics.json';
+      const LOCATION_DATA_URL = './v3_location_metrics.json';
+      const TWO_MIN = 120000;
+      let countdownSec = 120;
+      let assetRows = [];
+      let locationRows = [];
+
+      const assetPeriodButtons = Array.from(document.querySelectorAll('[data-asset-period]'));
+      const assetTypeButtons = Array.from(document.querySelectorAll('[data-asset-type]'));
+      const locPeriodButtons = Array.from(document.querySelectorAll('[data-loc-period]'));
+      const locTypeButtons = Array.from(document.querySelectorAll('[data-loc-type]'));
+      let assetPeriod = 'overall';
+      let assetType = 'all';
+      let locPeriod = 'overall';
+      let locType = 'all';
+      const unknownZoneMap = new Map();
+
+      function prettyLocation(value) {
+        const text = String(value || '-');
+        const m = text.match(/Unknown Location \(Anchor:\s*([A-Za-z0-9]+)\)/i);
+        if (!m) return text;
+        const anchorId = m[1];
+        if (!unknownZoneMap.has(anchorId)) {
+          unknownZoneMap.set(anchorId, unknownZoneMap.size + 1);
+        }
+        return `UK - Zone ${unknownZoneMap.get(anchorId)} (${anchorId})`;
+      }
+
+      function toNum(v) {
+        const n = Number(v);
+        return Number.isFinite(n) ? n : 0;
+      }
+
+      function visitCount(row) {
+        return toNum(row.total_visits ?? row.assets_received);
+      }
+
+      function uniqueAssetCount(row) {
+        return toNum(row.unique_assets);
+      }
+
+      function renderAssetTable() {
+        const body = document.querySelector('#assetWiseTable tbody');
+        const periodMatches = assetPeriod === 'monthly'
+          ? new Set(['monthly','mtd'])
+          : new Set([assetPeriod]);
+        const filtered = assetRows
+          .filter(r => periodMatches.has(r.period))
+          .filter(r => assetType === 'all' ? true : r.asset_type === assetType)
+          .sort((a,b) => a.asset_label.localeCompare(b.asset_label));
+
+        body.innerHTML = filtered.map(r => `<tr>
+          <td>${r.asset_label || '-'}</td>
+          <td>${r.asset_type || '-'}</td>
+          <td>${prettyLocation(r.most_visited || '-')}</td>
+          <td>${toNum(r.avg_moves_day).toFixed(2)}</td>
+          <td>${toNum(r.avg_stay_min).toFixed(1)}</td>
+          <td>${prettyLocation(r.assembly || '-')}</td>
+        </tr>`).join('') || '<tr><td colspan="6">No data available for selected filters.</td></tr>';
+      }
+
+      function renderLocationTable() {
+        const body = document.querySelector('#locationTopTable tbody');
+        const headRow = document.querySelector('#locationTopTable thead tr');
+        const periodRows = locationRows.filter(r => r.period === locPeriod);
+
+        if (locType === 'all') {
+          const byLocation = new Map();
+          periodRows.forEach((row) => {
+            const location = row.location || '-';
+            const visits = visitCount(row);
+            const stay = toNum(row.avg_stay_min);
+            const occupancy = toNum(row.avg_occupancy);
+            if (!byLocation.has(location)) {
+              byLocation.set(location, {
+                location,
+                total_visits: 0,
+                unique_assets: 0,
+                stay_weighted_sum: 0,
+                occupancy_sum: 0
+              });
+            }
+            const agg = byLocation.get(location);
+            agg.total_visits += visits;
+            agg.unique_assets += uniqueAssetCount(row);
+            agg.stay_weighted_sum += (stay * visits);
+            agg.occupancy_sum += occupancy;
+          });
+
+          const consolidated = Array.from(byLocation.values())
+            .map((r) => ({
+              location: r.location,
+              total_visits: r.total_visits,
+              unique_assets: r.unique_assets,
+              avg_stay_min: r.total_visits > 0 ? (r.stay_weighted_sum / r.total_visits) : 0,
+              avg_occupancy: r.occupancy_sum
+            }))
+            .sort((a,b) => {
+              const c = toNum(b.total_visits) - toNum(a.total_visits);
+              if (c !== 0) return c;
+              return toNum(b.avg_stay_min) - toNum(a.avg_stay_min);
+            })
+            .slice(0,20);
+
+          headRow.innerHTML = '<th>Location</th><th>Total Visits</th><th>Unique Assets</th><th>Avg Stay (min)</th><th>Avg Occupancy</th>';
+          body.innerHTML = consolidated.map(r => `<tr>
+            <td>${prettyLocation(r.location || '-')}</td>
+            <td>${toNum(r.total_visits)}</td>
+            <td>${toNum(r.unique_assets)}</td>
+            <td>${toNum(r.avg_stay_min).toFixed(1)}</td>
+            <td>${toNum(r.avg_occupancy).toFixed(1)}</td>
+          </tr>`).join('') || '<tr><td colspan="5">No data available for selected filters.</td></tr>';
+          return;
+        }
+
+        const filtered = periodRows
+          .filter(r => r.asset_type === locType)
+          .sort((a,b) => {
+            const c = visitCount(b) - visitCount(a);
+            if (c !== 0) return c;
+            return toNum(b.avg_stay_min) - toNum(a.avg_stay_min);
+          })
+          .slice(0,20);
+
+        headRow.innerHTML = '<th>Location</th><th>Asset Type</th><th>Total Visits</th><th>Unique Assets</th><th>Avg Stay (min)</th><th>Avg Occupancy</th>';
+        body.innerHTML = filtered.map(r => `<tr>
+          <td>${prettyLocation(r.location || '-')}</td>
+          <td>${r.asset_type || '-'}</td>
+          <td>${visitCount(r)}</td>
+          <td>${uniqueAssetCount(r)}</td>
+          <td>${toNum(r.avg_stay_min).toFixed(1)}</td>
+          <td>${toNum(r.avg_occupancy).toFixed(1)}</td>
+        </tr>`).join('') || '<tr><td colspan="6">No data available for selected filters.</td></tr>';
+      }
+
+      function applyPeriod(period) {
+        rows.forEach((row) => {
+          row.style.display = row.getAttribute('data-period') === period ? '' : 'none';
+        });
+        buttons.forEach((btn) => {
+          btn.classList.toggle('active', btn.getAttribute('data-main-period-btn') === period);
+        });
+      }
+
+      function bindToggleButtons(items, getVal, setActive, onChange) {
+        items.forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const val = getVal(btn);
+            onChange(val);
+            items.forEach((x) => x.classList.toggle('active', setActive(x, val)));
+          });
+        });
+      }
+
+      buttons.forEach((btn) => {
+        btn.addEventListener('click', () => applyPeriod(btn.getAttribute('data-main-period-btn')));
+      });
+
+      bindToggleButtons(assetPeriodButtons, b => b.getAttribute('data-asset-period'), (x,val) => x.getAttribute('data-asset-period') === val, (val) => { assetPeriod = val; renderAssetTable(); });
+      bindToggleButtons(assetTypeButtons, b => b.getAttribute('data-asset-type'), (x,val) => x.getAttribute('data-asset-type') === val, (val) => { assetType = val; renderAssetTable(); });
+      bindToggleButtons(locPeriodButtons, b => b.getAttribute('data-loc-period'), (x,val) => x.getAttribute('data-loc-period') === val, (val) => { locPeriod = val; renderLocationTable(); });
+      bindToggleButtons(locTypeButtons, b => b.getAttribute('data-loc-type'), (x,val) => x.getAttribute('data-loc-type') === val, (val) => { locType = val; renderLocationTable(); });
+
+      function setLastUpdated(text) {
+        const el = document.getElementById('lastUpdated');
+        if (el) el.textContent = `Last updated: ${text} | Source: IoT platform telemetry`;
+      }
+
+      function tickCountdown() {
+        const secEl = document.getElementById('clockSec');
+        const ring = document.getElementById('clockProgress');
+        const stateEl = document.getElementById('fetchState');
+        if (!secEl || !ring) return;
+        const circumference = 2 * Math.PI * 18;
+        countdownSec = Math.max(0, countdownSec - 1);
+        const progress = countdownSec / 120;
+        ring.style.strokeDasharray = `${circumference}`;
+        ring.style.strokeDashoffset = `${circumference * (1 - progress)}`;
+        secEl.textContent = String(countdownSec);
+        if (countdownSec <= 10 && stateEl && stateEl.textContent !== 'Fetching now...') {
+          stateEl.textContent = 'Refreshing soon...';
+        }
+      }
+
+      async function fetchAndRender() {
+        const stateEl = document.getElementById('fetchState');
+        try {
+          if (stateEl) stateEl.textContent = 'Fetching now...';
+
+          const [assetRes, locRes] = await Promise.all([
+            fetch(`${ASSET_DATA_URL}?t=${Date.now()}`, { cache: 'no-store' }),
+            fetch(`${LOCATION_DATA_URL}?t=${Date.now()}`, { cache: 'no-store' })
+          ]);
+
+          const [assetData, locData] = await Promise.all([
+            assetRes.json(),
+            locRes.json()
+          ]);
+
+          assetRows = Array.isArray(assetData) ? assetData : [];
+          locationRows = Array.isArray(locData) ? locData : [];
+          renderAssetTable();
+          renderLocationTable();
+
+          setLastUpdated(`${new Date().toLocaleString('en-IN', { hour12: false })} IST`);
+          countdownSec = 120;
+          if (stateEl) stateEl.textContent = 'Live';
+        } catch (_) {
+          renderAssetTable();
+          renderLocationTable();
+          setLastUpdated('datasource unavailable');
+          if (stateEl) stateEl.textContent = 'Retrying...';
+        }
+      }
+
+      applyPeriod('overall');
+
+      fetchAndRender();
+      setInterval(fetchAndRender, TWO_MIN);
+      setInterval(tickCountdown, 1000);
+      setInterval(() => {
+        const nextUrl = `${window.location.pathname}?t=${Date.now()}`;
+        window.location.replace(nextUrl);
+      }, TWO_MIN);
+    })();
+  </script>
+</body>
+</html>

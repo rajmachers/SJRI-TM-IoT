@@ -1,0 +1,1263 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>SJRI Asset Tracking PoC - Live Dashboard</title>
+  <style>
+    :root {
+      --bg: #eff1f8;
+      --card: #ffffff;
+      --ink: #11162f;
+      --muted: #5d5d66;
+      --blue: #292d6e;
+      --gold: #d0bb68;
+      --line: #e2e8f0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+    .wrap { max-width: 1480px; margin: 0 auto; padding: 24px; }
+    .hero {
+      background: linear-gradient(120deg, #1f245f 0%, #292d6e 70%, #d0bb68 100%);
+      color: #fff;
+      border-radius: 18px;
+      padding: 22px 26px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    .hero h1 { margin: 0 0 8px; font-size: 34px; }
+    .hero p { margin: 0; font-size: 16px; }
+    .hero-left { min-width: 0; }
+    .next-update {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.35);
+      border-radius: 999px;
+      padding: 7px 10px 7px 8px;
+      backdrop-filter: blur(2px);
+      flex-shrink: 0;
+    }
+    .clock-wrap {
+      width: 42px;
+      height: 42px;
+      position: relative;
+    }
+    .clock-wrap svg {
+      width: 42px;
+      height: 42px;
+      transform: rotate(-90deg);
+    }
+    .clock-bg {
+      fill: none;
+      stroke: rgba(255,255,255,.25);
+      stroke-width: 4;
+    }
+    .clock-progress {
+      fill: none;
+      stroke: #fff;
+      stroke-width: 4;
+      stroke-linecap: round;
+      stroke-dasharray: 113.1;
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset 1s linear;
+    }
+    .clock-wrap .clock-sec {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      font-weight: 800;
+      color: #fff;
+    }
+    .next-meta {
+      font-size: 11px;
+      line-height: 1.3;
+      color: #fff;
+    }
+    .next-meta strong {
+      display: block;
+      font-size: 12px;
+      letter-spacing: .2px;
+    }
+    .next-meta .state {
+      opacity: .95;
+    }
+
+    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 14px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+    }
+    .kpi { grid-column: span 4; }
+    .wide-8 { grid-column: span 8; }
+    .wide-6 { grid-column: span 6; }
+    .wide-4 { grid-column: span 4; }
+
+    .widget-title {
+      margin: -16px -16px 12px;
+      padding: 11px 14px;
+      border-radius: 14px 14px 0 0;
+      color: #fff;
+      font-size: 17px;
+      font-weight: 700;
+      background: linear-gradient(90deg, #23285f 0%, #292d6e 72%, #d0bb68 100%);
+    }
+
+    .kpi .label { font-size: 12px; color: var(--muted); text-transform: uppercase; }
+    .kpi .val { margin-top: 8px; font-size: 42px; font-weight: 700; }
+
+    .pill-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    .pill {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #eceffc;
+      color: #292d6e;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .mix-dual { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .mix-block {
+      border: 1px solid #d7deef;
+      border-radius: 10px;
+      background: #f8fafc;
+      padding: 10px;
+    }
+    .mix-subtitle {
+      font-size: 12px;
+      text-transform: uppercase;
+      color: #5d5d66;
+      font-weight: 700;
+      letter-spacing: .25px;
+      margin-bottom: 8px;
+    }
+    .mix-grid { display: grid; grid-template-columns: 140px 1fr; gap: 14px; align-items: center; }
+    .donut {
+      width: 128px;
+      height: 128px;
+      border-radius: 50%;
+      background: conic-gradient(#292d6e 0 63.6%, #d0bb68 63.6% 100%);
+      position: relative;
+    }
+    .donut::after {
+      content: attr(data-label);
+      position: absolute;
+      inset: 20px;
+      border-radius: 50%;
+      background: #fff;
+      display: grid;
+      place-items: center;
+      color: #666;
+      font-weight: 700;
+    }
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      color: #5d5d66;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      flex: 0 0 auto;
+    }
+
+    .signal-grid { display: grid; gap: 8px; }
+    .signal {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #f8fafc;
+      padding: 10px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+    .signal .name { color: var(--muted); font-size: 13px; }
+    .signal .num { font-size: 20px; font-weight: 700; }
+    .signal .num.status { font-size: 15px; }
+    .signal .num.status.good { color: #156f3d; }
+    .signal .num.status.warn { color: #b54708; }
+    .signal .num.status.next { color: #292d6e; }
+
+    .intel-grid {
+      margin-top: 10px;
+      display: grid;
+      gap: 10px;
+      grid-template-columns: 1fr;
+    }
+    .intel-block {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #f8fafc;
+      padding: 9px;
+    }
+    .intel-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .25px;
+      color: #5d5d66;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .bubble-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: flex-start;
+    }
+    .bubble-item {
+      width: 92px;
+      display: grid;
+      justify-items: center;
+      gap: 4px;
+    }
+    .asset-bubble {
+      border-radius: 999px;
+      display: inline-grid;
+      place-items: center;
+      text-align: center;
+      padding: 4px;
+      color: #fff;
+      font-weight: 700;
+      cursor: help;
+      border: 1px solid rgba(41,45,110,.22);
+      box-shadow: inset 0 2px 8px rgba(255,255,255,.35);
+    }
+    .asset-bubble.tone-1 { background: linear-gradient(135deg, #d0bb68 0%, #b89a42 100%); color: #2e2350; }
+    .asset-bubble.tone-2 { background: linear-gradient(135deg, #4b67bd 0%, #2a3f87 100%); }
+    .asset-bubble.tone-3 { background: linear-gradient(135deg, #87a3e3 0%, #5f7cc1 100%); }
+    .asset-bubble .b-ico {
+      font-size: 13px;
+      line-height: 1;
+      margin-bottom: 2px;
+    }
+    .asset-bubble .b-num { font-size: 11px; line-height: 1.1; }
+    .bubble-lab {
+      width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align: center;
+      color: #38426c;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: help;
+    }
+    .heat-list { display: grid; gap: 7px; }
+    .heat-row {
+      display: grid;
+      grid-template-columns: 180px 1fr 56px;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+    .heat-name {
+      color: #292d6e;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: help;
+    }
+    .heat-track {
+      height: 8px;
+      border-radius: 999px;
+      background: #e7eaf8;
+      overflow: hidden;
+    }
+    .heat-track > span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, #d0bb68, #292d6e);
+    }
+    .heat-val {
+      text-align: right;
+      color: #5d5d66;
+      font-weight: 700;
+    }
+    .hi-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    .hi-box {
+      border: 1px solid #d6ddef;
+      border-radius: 10px;
+      background: #f8fafc;
+      padding: 10px;
+    }
+    .hi-k {
+      font-size: 11px;
+      letter-spacing: .3px;
+      text-transform: uppercase;
+      color: #5d5d66;
+      margin-bottom: 5px;
+      font-weight: 700;
+    }
+    .hi-v {
+      font-size: 20px;
+      line-height: 1.2;
+      font-weight: 800;
+      color: #292d6e;
+    }
+
+    table { width: 100%; border-collapse: collapse; background: #f4efdc; font-size: 14px; }
+    th, td { border-bottom: 1px solid #d8c98a; padding: 8px; color: #292d6e; text-align: left; }
+    th { font-size: 12px; text-transform: uppercase; background: #d0bb68; }
+
+    .table-pager {
+      margin-top: 8px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      align-items: center;
+    }
+    .table-pager button {
+      border: 1px solid #cfd8ea;
+      background: #fff;
+      color: #292d6e;
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .table-pager button:disabled { opacity: .45; cursor: not-allowed; }
+
+    .unknown-attention {
+      margin-top: 10px;
+      border: 1px solid #ead9a0;
+      border-radius: 10px;
+      background: #fff9e7;
+      padding: 8px;
+    }
+    .unknown-title {
+      color: #6f5c1f;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .25px;
+    }
+    .unknown-collapse summary {
+      list-style: none;
+      cursor: pointer;
+      color: #6f5c1f;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .25px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      user-select: none;
+    }
+    .unknown-collapse summary::-webkit-details-marker { display: none; }
+    .unknown-collapse summary::before {
+      content: '▸';
+      font-size: 12px;
+      margin-right: 4px;
+    }
+    .unknown-collapse[open] summary::before {
+      content: '▾';
+    }
+    .unknown-sum {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: none;
+      letter-spacing: 0;
+      color: #8a7330;
+    }
+    .unknown-collapse[open] .unknown-list {
+      margin-top: 8px;
+    }
+    .unknown-list {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+    }
+    .unknown-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      border: 1px solid #d0bb68;
+      border-radius: 999px;
+      background: #f4efdc;
+      color: #6f5c1f;
+      padding: 4px 8px;
+      max-width: 100%;
+    }
+    .unknown-chip .label {
+      max-width: 260px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: help;
+    }
+    .unknown-chip .icons {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .unknown-chip .tiny {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border: 1px solid #d6ddef;
+      border-radius: 999px;
+      background: #f5f7ff;
+      color: #292d6e;
+      padding: 1px 6px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: help;
+    }
+    .ico-po {
+      width: 14px;
+      height: 12px;
+      display: inline-block;
+      position: relative;
+      border: 1.5px solid #1f6ad1;
+      border-radius: 4px;
+      background: #ecf3ff;
+      vertical-align: -1px;
+      flex: 0 0 auto;
+    }
+    .ico-po::before {
+      content: '';
+      position: absolute;
+      left: 2px;
+      right: 2px;
+      top: 4px;
+      height: 2px;
+      background: repeating-linear-gradient(90deg, #1f6ad1 0 3px, transparent 3px 5px);
+      border-radius: 2px;
+    }
+    .ico-po::after {
+      content: '';
+      position: absolute;
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      right: 1px;
+      bottom: 1px;
+      background: #1f6ad1;
+    }
+
+    .stale {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .stale.orange { background: #f4efdc; color: #7a6420; border: 1px solid #d0bb68; }
+    .stale.red { background: #fde8e8; color: #b42318; border: 1px solid #fdb2b2; }
+
+    .util-row {
+      display: grid;
+      grid-template-columns: 260px 1fr 240px;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 10px;
+      font-size: 13px;
+      border: 1px solid #e5eaf6;
+      border-radius: 10px;
+      padding: 8px;
+      background: #fbfcff;
+    }
+    .util-left {
+      min-width: 0;
+    }
+    .util-loc {
+      color: #22284e;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .util-meta {
+      margin-top: 4px;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .metric-balloon {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid #d0bb68;
+      background: #f4efdc;
+      color: #6f5c1f;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: help;
+    }
+    .util-track { height: 10px; border-radius: 999px; background: #e7eaf8; overflow: hidden; }
+    .util-track > span { display: block; height: 100%; background: linear-gradient(90deg, #d0bb68, #292d6e); }
+    .util-right {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .util-icons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .type-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid #d6ddef;
+      border-radius: 999px;
+      padding: 4px 8px;
+      background: #f5f7ff;
+      color: #292d6e;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: help;
+    }
+    .type-chip .ico {
+      font-size: 14px;
+      line-height: 1;
+    }
+    .type-chip .cnt {
+      min-width: 12px;
+      text-align: right;
+    }
+    .type-chip.muted {
+      background: #f9fafb;
+      color: #6b7280;
+      border-color: #e5e7eb;
+    }
+    .swap-graph {
+      display: grid;
+      gap: 10px;
+    }
+    .swap-row {
+      border: 1px solid var(--line);
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+    }
+    .swap-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      color: #292d6e;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .swap-bars {
+      display: grid;
+      gap: 6px;
+    }
+    .swap-line {
+      display: grid;
+      grid-template-columns: 130px 1fr 95px;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #5d5d66;
+    }
+    .swap-track {
+      height: 10px;
+      border-radius: 999px;
+      background: #e8ecf8;
+      overflow: hidden;
+    }
+    .swap-fill-pre,
+    .swap-fill-post {
+      display: block;
+      height: 100%;
+      border-radius: 999px;
+    }
+    .swap-fill-pre { background: #98a4d8; }
+    .swap-fill-post { background: linear-gradient(90deg, #d0bb68, #292d6e); }
+    .swap-val { text-align: right; color: #292d6e; font-weight: 700; }
+    .swap-chip {
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid #b8e4c8;
+      background: #e7f6ed;
+      color: #156f3d;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 1100px) {
+      .kpi, .wide-8, .wide-6, .wide-4 { grid-column: span 12; }
+      .mix-dual { grid-template-columns: 1fr; }
+      .mix-grid { grid-template-columns: 1fr; }
+      .hi-row { grid-template-columns: 1fr; }
+      .util-row { grid-template-columns: 1fr; }
+      .util-right { justify-content: flex-start; }
+      .util-num { text-align: left; }
+      .hero { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <div class="hero-left">
+        <h1>SJRI Asset Tracking PoC - Live Dashboard</h1>
+        <p id="lastUpdated">Last updated: loading...</p>
+      </div>
+      <div class="next-update" aria-live="polite">
+        <div class="clock-wrap">
+          <svg viewBox="0 0 42 42" aria-hidden="true">
+            <circle class="clock-bg" cx="21" cy="21" r="18"></circle>
+            <circle id="clockProgress" class="clock-progress" cx="21" cy="21" r="18"></circle>
+          </svg>
+          <div id="clockSec" class="clock-sec">120</div>
+        </div>
+        <div class="next-meta">
+          <strong>Next update</strong>
+          <span id="fetchState" class="state">Idle</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <article class="card kpi">
+        <div class="label">ARUBA ACCESS POINTS COVERAGE</div>
+        <div class="val" id="kpiAp">-</div>
+      </article>
+      <article class="card kpi">
+        <div class="label">Tracked Assets</div>
+        <div class="val" id="kpiAssets">-</div>
+      </article>
+      <article class="card kpi">
+        <div class="label">Activity Events</div>
+        <div class="val" id="kpiEvents">-</div>
+      </article>
+
+      <article class="card wide-8">
+        <h2 class="widget-title">Asset Mix & Repurposing Status</h2>
+        <div class="mix-dual">
+          <div class="mix-block">
+            <div class="mix-subtitle">Device Classification</div>
+            <div class="mix-grid">
+              <div id="mixDonut" class="donut" data-label="Device"></div>
+              <div id="mixLegend"></div>
+            </div>
+          </div>
+          <div class="mix-block">
+            <div class="mix-subtitle">Access Point Classification</div>
+            <div class="mix-grid">
+              <div id="apDonut" class="donut" data-label="AP"></div>
+              <div id="apLegend"></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card wide-4">
+        <h2 class="widget-title">Top Highlights</h2>
+        <div class="hi-row">
+          <div class="hi-box">
+            <div class="hi-k">Highest Activity Device</div>
+            <div id="highestActivityDevice" class="hi-v">-</div>
+          </div>
+          <div class="hi-box">
+            <div class="hi-k">Highest Visited Location</div>
+            <div id="highestVisitedLocation" class="hi-v">-</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card wide-6">
+        <h2 class="widget-title">Today: Asset Tracking Snapshot (Recent Telemetry)</h2>
+        <table id="assetTable">
+          <thead>
+            <tr><th>Asset Label</th><th>Current Location</th><th>Arrived At</th><th>Last Tracked</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <div class="table-pager" id="assetPager"></div>
+      </article>
+
+      <article class="card wide-6">
+        <h2 class="widget-title">Today: Location Utilization (Recent Telemetry)</h2>
+        <div id="utilBars"></div>
+        <div class="table-pager" id="utilPager"></div>
+        <div id="unknownUtilAttention" class="unknown-attention"></div>
+      </article>
+
+      <article class="card wide-6">
+        <h2 class="widget-title">Top Assets by Activity</h2>
+        <table id="topAssetsTable">
+          <thead><tr><th>Asset Label</th><th>Activity Events</th><th>Active Days</th><th>Use Level</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div class="table-pager" id="topAssetsPager"></div>
+      </article>
+
+      <article class="card wide-6">
+        <h2 class="widget-title">Top Known Locations by Activity</h2>
+        <table id="topKnownLocationsTable">
+          <thead><tr><th>Location</th><th>Activity Events</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div class="table-pager" id="topKnownLocationsPager"></div>
+      </article>
+
+      <article class="card wide-6">
+        <h2 class="widget-title">Swap Impact Since 03 Mar</h2>
+        <div id="swapGraph" class="swap-graph"></div>
+      </article>
+
+      <article class="card wide-6">
+        <h2 class="widget-title">Topline Signals</h2>
+        <div class="signal-grid" id="toplineSignals"></div>
+      </article>
+
+    </section>
+  </div>
+
+  <script>
+    const DATA_URL = './sjri_live_data.json';
+    const TWO_MIN = 120000;
+    let countdownSec = 120;
+
+    function fmtNum(n) {
+      if (n === null || n === undefined) return '-';
+      return Number(n).toLocaleString('en-IN');
+    }
+
+    function fmtMetric(v) {
+      if (typeof v === 'number') return fmtNum(v);
+      if (typeof v === 'string') return v;
+      if (v === null || v === undefined) return '-';
+      const n = Number(v);
+      return Number.isFinite(n) ? fmtNum(n) : String(v);
+    }
+
+    function parseTimeValue(raw) {
+      if (!raw) return 0;
+      const text = String(raw).replace(/\s*IST\s*$/i, '').trim();
+      let t = Date.parse(text);
+      if (Number.isFinite(t)) return t;
+
+      const m = text.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+      if (m) {
+        const dd = Number(m[1]);
+        const mm = Number(m[2]);
+        const yy = Number(m[3]) < 100 ? 2000 + Number(m[3]) : Number(m[3]);
+        const hh = Number(m[4] || 0);
+        const mi = Number(m[5] || 0);
+        const ss = Number(m[6] || 0);
+        t = Date.UTC(yy, mm - 1, dd, hh, mi, ss);
+        if (Number.isFinite(t)) return t;
+      }
+
+      return 0;
+    }
+
+    function renderKpis(data) {
+      document.getElementById('kpiAp').textContent = fmtNum(data.kpis?.aruba_access_points_coverage);
+      document.getElementById('kpiAssets').textContent = fmtNum(data.kpis?.tracked_assets);
+      document.getElementById('kpiEvents').textContent = fmtNum(data.kpis?.activity_events);
+      document.getElementById('lastUpdated').textContent = `Last updated: ${data.generated_at_ist || '-'} | Source: IoT platform telemetry`;
+    }
+
+    function renderMix(data) {
+      const mix = data.asset_mix || [];
+      const topline = data.topline || {};
+      const total = mix.reduce((sum, x) => sum + Number(x.count || 0), 0) || 1;
+      const deviceColors = ['#292d6e', '#d0bb68', '#87a3e3', '#98a4d8'];
+
+      let deviceCursor = 0;
+      const deviceSegments = mix.map((x, idx) => {
+        const pct = (Number(x.count || 0) * 100) / total;
+        const start = deviceCursor;
+        deviceCursor += pct;
+        return `${deviceColors[idx % deviceColors.length]} ${start.toFixed(1)}% ${deviceCursor.toFixed(1)}%`;
+      });
+      document.getElementById('mixDonut').style.background = `conic-gradient(${deviceSegments.join(', ') || '#e5e7eb 0 100%'})`;
+
+      document.getElementById('mixLegend').innerHTML = mix.map((x, idx) => {
+        const pct = ((Number(x.count || 0) * 100) / total).toFixed(1);
+        const color = deviceColors[idx % deviceColors.length];
+        return `<div class="legend-row"><span class="legend-dot" style="background:${color}"></span><span>${x.asset_type}: ${fmtNum(x.count)} (${pct}%)</span></div>`;
+      }).join('');
+
+      const gf = Number(topline.ap_gf_count || 0);
+      const nb = Number(topline.ap_nb_count || 0);
+      const f1 = Number(topline.ap_f1_count || 0);
+      const apTotalRaw = gf + nb + f1;
+      const apTotal = Math.max(1, apTotalRaw);
+      const apRows = [
+        { label: 'Hospital - Ground Floor', count: gf, color: '#292d6e' },
+        { label: 'Hospital - New Block GF', count: nb, color: '#d0bb68' },
+        { label: 'Hospital - First Floor', count: f1, color: '#87a3e3' }
+      ];
+
+      let apCursor = 0;
+      const apSegments = apRows.map((r) => {
+        const pct = (r.count * 100) / apTotal;
+        const start = apCursor;
+        apCursor += pct;
+        return `${r.color} ${start.toFixed(1)}% ${apCursor.toFixed(1)}%`;
+      });
+      document.getElementById('apDonut').style.background = `conic-gradient(${apSegments.join(', ') || '#e5e7eb 0 100%'})`;
+
+      document.getElementById('apLegend').innerHTML = apRows.map((r) => {
+        const pct = ((r.count * 100) / apTotal).toFixed(1);
+        return `<div class="legend-row" title="${r.label}">
+          <span class="legend-dot" style="background:${r.color}"></span>
+          <span>${r.label}: ${fmtNum(r.count)} (${pct}%)</span>
+        </div>`;
+      }).join('');
+    }
+
+    function renderTopline(data) {
+      const topline = data.topline || {};
+      const assets = data.top_assets_by_activity || [];
+      const utilization = data.today_location_utilization || [];
+      const typeByAsset = {};
+      (data.today_asset_tracking || []).forEach((r) => {
+        if (!r || !r.asset_label) return;
+        typeByAsset[r.asset_label] = r.device_type || '';
+      });
+
+      const unknownEvents = Number(topline.unknown_anchor_events || 0);
+      const rows = [
+        { name: 'Assets reporting', value: fmtNum(topline.assets_reporting ?? data.kpis?.tracked_assets), cls: 'next' },
+        { name: 'Known locations covered', value: fmtNum(topline.known_locations_covered), cls: 'good' },
+        { name: 'Daily location visit events', value: fmtNum(topline.daily_location_visit_events), cls: 'next' },
+        { name: 'Unknown anchor events (today)', value: fmtNum(unknownEvents), cls: unknownEvents > 0 ? 'warn' : 'good' }
+      ];
+
+      const maxAsset = Math.max(1, ...assets.map(a => Number(a.activity_events || 0)));
+      const assetBubbles = assets.map((a) => {
+        const count = Number(a.activity_events || 0);
+        const size = Math.max(44, Math.min(74, 40 + Math.round((count * 34) / maxAsset)));
+        const rankTone = count >= maxAsset * 0.85 ? 'tone-1' : (count >= maxAsset * 0.55 ? 'tone-2' : 'tone-3');
+        const kind = normalizeDeviceKind(typeByAsset[a.asset_label] || '', a.asset_label || '');
+        const icon = kind === 'wheelchair' ? '♿' : (kind === 'pulseoximeter' ? '<span class="ico-po" aria-hidden="true"></span>' : '•');
+        const tip = `${a.asset_label || '-'}\nActivity events: ${fmtNum(count)}\nActive days: ${fmtNum(a.active_days)}`;
+        return `<div class="bubble-item">
+          <span class="asset-bubble ${rankTone}" title="${tip.replace(/"/g, '&quot;')}" style="width:${size}px;height:${size}px;">
+            <span class="b-ico">${icon}</span>
+            <span class="b-num">${fmtNum(count)}</span>
+          </span>
+          <span class="bubble-lab" title="${(a.asset_label || '-').replace(/"/g, '&quot;')}">${a.asset_label || '-'}</span>
+        </div>`;
+      }).join('') || '<div style="color:#6b7280;font-size:12px">No asset activity telemetry.</div>';
+
+      const pressureRows = utilization.map((x) => {
+        const visits = Number(x.total_visits_today || 0);
+        const current = Number(x.assets_now || 0);
+        const peak = Number(x.peak_occupancy || 0);
+        const score = (0.5 * visits) + (0.3 * current) + (0.2 * peak);
+        return { ...x, score };
+      }).sort((a, b) => b.score - a.score).slice(0, 6);
+      const maxScore = Math.max(1, ...pressureRows.map(r => Number(r.score || 0)));
+      const heatRows = pressureRows.map((r) => {
+        const w = (Number(r.score || 0) * 100 / maxScore).toFixed(1);
+        const tip = `${r.location_label || '-'}\nVisits: ${fmtNum(r.total_visits_today)}\nNow: ${fmtNum(r.assets_now)}\nPeak: ${fmtNum(r.peak_occupancy)}\nPressure score: ${fmtNum(Math.round(r.score))}`;
+        return `<div class="heat-row">
+          <span class="heat-name" title="${tip.replace(/"/g, '&quot;')}">${r.location_label || '-'}</span>
+          <div class="heat-track"><span style="width:${w}%"></span></div>
+          <span class="heat-val">${fmtNum(Math.round(r.score))}</span>
+        </div>`;
+      }).join('') || '<div style="color:#6b7280;font-size:12px">No location telemetry.</div>';
+
+      document.getElementById('toplineSignals').innerHTML = rows.map(r => `
+        <div class="signal">
+          <div class="name">${r.name}</div>
+          <div class="num status ${r.cls || ''}">${r.value}</div>
+        </div>
+      `).join('') + `
+        <div class="intel-grid">
+          <div class="intel-block">
+            <div class="intel-title">Asset Activity Bubble Map</div>
+            <div class="bubble-wrap">${assetBubbles}</div>
+          </div>
+          <div class="intel-block">
+            <div class="intel-title">Location Pressure Heat Strip</div>
+            <div class="heat-list">${heatRows}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderHighlights(data) {
+      const excludedDevice = 'Pulseoximeter - ME 21 0181';
+      const excludedLocationNeedle = 'g103-emergency corridor';
+
+      const topAssets = data.top_assets_by_activity || [];
+      const topLocations = data.top_known_locations_by_activity || [];
+
+      const bestAsset = topAssets.find(x => (x.asset_label || '').trim() !== excludedDevice) || topAssets[0];
+      const bestLocation = topLocations.find(x => !((x.location_label || '').toLowerCase().includes(excludedLocationNeedle))) || topLocations[0];
+
+      document.getElementById('highestActivityDevice').textContent = bestAsset?.asset_label || '-';
+      document.getElementById('highestVisitedLocation').textContent = bestLocation?.location_label || '-';
+    }
+
+    function renderAssetTable(data) {
+      const rows = [...(data.today_asset_tracking || [])].sort((a, b) => {
+        const ta = parseTimeValue(a.last_tracked_ist);
+        const tb = parseTimeValue(b.last_tracked_ist);
+        return tb - ta;
+      });
+      renderPagedTable('assetTable', 'assetPager', rows, 6, (r) => {
+        return `<tr>
+          <td>${r.asset_label || '-'}</td>
+          <td>${r.current_location || '-'}</td>
+          <td>${r.arrived_at_ist || '-'}</td>
+          <td>${r.last_tracked_ist || '-'}</td>
+        </tr>`;
+      }, 4);
+    }
+
+    function renderPagedTable(tableId, pagerId, rows, pageSize, rowHtml, colCount) {
+      const tbody = document.querySelector(`#${tableId} tbody`);
+      const pager = document.getElementById(pagerId);
+      const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+      let page = 0;
+
+      function paint() {
+        const slice = rows.slice(page * pageSize, page * pageSize + pageSize);
+        tbody.innerHTML = slice.map(rowHtml).join('');
+
+        for (let i = slice.length; i < pageSize; i++) {
+          tbody.insertAdjacentHTML('beforeend', `<tr><td colspan="${colCount}">&nbsp;</td></tr>`);
+        }
+
+        if (rows.length > pageSize) {
+          const prevId = `${pagerId}Prev`;
+          const nextId = `${pagerId}Next`;
+          pager.innerHTML = `
+            <button id="${prevId}" ${page === 0 ? 'disabled' : ''}>Prev</button>
+            <span>Page ${page + 1} / ${totalPages}</span>
+            <button id="${nextId}" ${page === totalPages - 1 ? 'disabled' : ''}>Next</button>
+          `;
+          document.getElementById(prevId).onclick = () => { if (page > 0) { page--; paint(); } };
+          document.getElementById(nextId).onclick = () => { if (page < totalPages - 1) { page++; paint(); } };
+        } else {
+          pager.innerHTML = '';
+        }
+      }
+
+      paint();
+    }
+
+    function normalizeDeviceKind(deviceType, assetLabel) {
+      const t = String(deviceType || '').toLowerCase();
+      const l = String(assetLabel || '').toLowerCase();
+      if (t.includes('wheel') || l.includes('wheelchair')) return 'wheelchair';
+      if (t.includes('pulse') || t.includes('oximeter') || t.includes('spo2') || l.includes('pulseoximeter')) return 'pulseoximeter';
+      return 'other';
+    }
+
+    function parseTelemetryList(raw) {
+      if (raw === null || raw === undefined) return [];
+      if (Array.isArray(raw)) return raw.map(x => String(x).trim()).filter(Boolean);
+      let text = String(raw).trim();
+      if (!text) return [];
+
+      try {
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed)) return parsed.map(x => String(x).trim()).filter(Boolean);
+      } catch (e) {}
+
+      const bracketed = text.match(/^\[(.*)\]$/);
+      if (bracketed) text = bracketed[1];
+
+      return text
+        .split(/[|,;]+/)
+        .map(x => x.replace(/^['"\s]+|['"\s]+$/g, '').trim())
+        .filter(Boolean);
+    }
+
+    function tooltipText(title, names) {
+      if (!names.length) return `${title}: none`;
+      return `${title}:\n${names.join('\n')}`;
+    }
+
+    function renderUtilization(data) {
+      const items = [...(data.today_location_utilization || [])]
+        .sort((a, b) => Number(b.total_visits_today || 0) - Number(a.total_visits_today || 0));
+      const tracked = data.today_asset_tracking || [];
+      const maxVisits = Math.max(1, ...items.map(x => Number(x.total_visits_today || 0)));
+      const utilBars = document.getElementById('utilBars');
+      const utilPager = document.getElementById('utilPager');
+      const pageSize = 4;
+      const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+      let page = 0;
+
+      function rowHtml(x) {
+        const location = x.location_label || '-';
+        const names = parseTelemetryList(x.device_names_present);
+        const types = parseTelemetryList(x.device_types_present);
+        const wheelchairs = [];
+        const pulseoximeters = [];
+
+        names.forEach((name, idx) => {
+          const kind = normalizeDeviceKind(types[idx] || '', name);
+          if (kind === 'wheelchair') wheelchairs.push(name);
+          else if (kind === 'pulseoximeter') pulseoximeters.push(name);
+        });
+
+        if (!types.length && names.length) {
+          names.forEach((name) => {
+            const kind = normalizeDeviceKind('', name);
+            if (kind === 'wheelchair') wheelchairs.push(name);
+            else if (kind === 'pulseoximeter') pulseoximeters.push(name);
+          });
+        }
+
+        if (types.length && !names.length) {
+          types.forEach((typeText, idx) => {
+            const kind = normalizeDeviceKind(typeText, '');
+            const pseudoName = `${typeText || 'Device'} ${idx + 1}`;
+            if (kind === 'wheelchair') wheelchairs.push(pseudoName);
+            else if (kind === 'pulseoximeter') pulseoximeters.push(pseudoName);
+          });
+        }
+
+        const wcUnique = Array.from(new Set(wheelchairs));
+        const poUnique = Array.from(new Set(pulseoximeters));
+
+        const w = (Number(x.total_visits_today || 0) * 100 / maxVisits).toFixed(1);
+        const zone = x.profile_name ? ` <span style="color:#6a7197;font-size:11px">(${x.profile_name})</span>` : '';
+        const wcTooltip = tooltipText('Wheelchairs', wcUnique);
+        const poTooltip = tooltipText('Pulseoximeters', poUnique);
+        const unknownCount = Math.max(0, Number(x.assets_now || 0) - wcUnique.length - poUnique.length);
+        const unknownTooltip = `Other tracked devices in this location: ${unknownCount}`;
+        const nowVal = Number(x.assets_now || 0);
+        const peakVal = Number(x.peak_occupancy || 0);
+        const visitsVal = Number(x.total_visits_today || 0);
+
+        return `<div class="util-row">
+          <div class="util-left">
+            <div class="util-loc" title="${String(location).replace(/"/g, '&quot;')}">${location}${zone}</div>
+            <div class="util-meta">
+              <span class="metric-balloon" title="Current devices in this location now">Now ${fmtNum(nowVal)}</span>
+              <span class="metric-balloon" title="Maximum occupancy today">Peak ${fmtNum(peakVal)}</span>
+              <span class="metric-balloon" title="Total visits recorded today">Visits ${fmtNum(visitsVal)}</span>
+            </div>
+          </div>
+          <div class="util-track"><span style="width:${w}%"></span></div>
+          <div class="util-right">
+            <div class="util-icons">
+              ${wcUnique.length > 0 ? `<span class="type-chip" title="${wcTooltip.replace(/"/g, '&quot;')}"><span class="ico">♿</span><span class="cnt">${wcUnique.length}</span></span>` : ''}
+              ${poUnique.length > 0 ? `<span class="type-chip" title="${poTooltip.replace(/"/g, '&quot;')}"><span class="ico ico-po" aria-hidden="true"></span><span class="cnt">${poUnique.length}</span></span>` : ''}
+              ${unknownCount > 0 ? `<span class="type-chip muted" title="${unknownTooltip}"><span class="ico">•</span><span class="cnt">${unknownCount}</span></span>` : ''}
+            </div>
+          </div>
+        </div>`;
+      }
+
+      function paintUtilPage() {
+        const slice = items.slice(page * pageSize, page * pageSize + pageSize);
+        utilBars.innerHTML = slice.map(rowHtml).join('');
+
+        if (items.length > pageSize) {
+          const prevId = 'utilPagerPrev';
+          const nextId = 'utilPagerNext';
+          utilPager.innerHTML = `
+            <button id="${prevId}" ${page === 0 ? 'disabled' : ''}>Prev</button>
+            <span>Page ${page + 1} / ${totalPages}</span>
+            <button id="${nextId}" ${page === totalPages - 1 ? 'disabled' : ''}>Next</button>
+          `;
+          document.getElementById(prevId).onclick = () => { if (page > 0) { page--; paintUtilPage(); } };
+          document.getElementById(nextId).onclick = () => { if (page < totalPages - 1) { page++; paintUtilPage(); } };
+        } else {
+          utilPager.innerHTML = '';
+        }
+      }
+
+      paintUtilPage();
+
+      const unknownMap = {};
+      tracked.forEach((r) => {
+        const location = String(r.current_location || '').trim();
+        if (!location) return;
+        const isUnknown = location.toLowerCase().startsWith('unknown') || location === '-NoDeviceName';
+        if (!isUnknown) return;
+
+        if (!unknownMap[location]) unknownMap[location] = { count: 0, names: [], wc: [], po: [] };
+        unknownMap[location].count += 1;
+        unknownMap[location].names.push(r.asset_label || '-');
+
+        const kind = normalizeDeviceKind(r.device_type, r.asset_label);
+        if (kind === 'wheelchair') unknownMap[location].wc.push(r.asset_label || '-');
+        else if (kind === 'pulseoximeter') unknownMap[location].po.push(r.asset_label || '-');
+      });
+
+      const unknownRows = Object.entries(unknownMap)
+        .map(([location, info]) => ({
+          location,
+          count: info.count,
+          names: Array.from(new Set(info.names)),
+          wc: Array.from(new Set(info.wc)),
+          po: Array.from(new Set(info.po))
+        }))
+        .sort((a, b) => b.count - a.count || a.location.localeCompare(b.location));
+
+      const attentionEl = document.getElementById('unknownUtilAttention');
+      if (!unknownRows.length) {
+        attentionEl.innerHTML = '<div class="unknown-title">Attention: Unknown Locations</div><div style="color:#6f5c1f;font-size:12px">No unknown locations in current telemetry.</div>';
+        return;
+      }
+
+      const totalUnknownDevices = unknownRows.reduce((sum, x) => sum + Number(x.count || 0), 0);
+
+      attentionEl.innerHTML = `
+        <details class="unknown-collapse">
+          <summary>
+            <span>Attention: Unknown Locations (Action Needed)</span>
+            <span class="unknown-sum">${fmtNum(totalUnknownDevices)} devices · ${fmtNum(unknownRows.length)} anchors</span>
+          </summary>
+          <div class="unknown-list">
+            ${unknownRows.map((x) => {
+              const nameTip = `Unknown zone: ${x.location}\nDevices (${x.count}):\n${x.names.join('\n')}`;
+              const wcTip = tooltipText('Wheelchairs', x.wc);
+              const poTip = tooltipText('Pulseoximeters', x.po);
+              return `<div class="unknown-chip">
+                <span class="label" title="${nameTip.replace(/"/g, '&quot;')}">${x.location}</span>
+                <span class="icons">
+                  ${x.wc.length > 0 ? `<span class="tiny" title="${wcTip.replace(/"/g, '&quot;')}">♿ ${x.wc.length}</span>` : ''}
+                  ${x.po.length > 0 ? `<span class="tiny" title="${poTip.replace(/"/g, '&quot;')}"><span class="ico-po" aria-hidden="true"></span> ${x.po.length}</span>` : ''}
+                </span>
+              </div>`;
+            }).join('')}
+          </div>
+        </details>
+      `;
+    }
+
+    function renderExtendedTables(data) {
+      renderPagedTable(
+        'topAssetsTable',
+        'topAssetsPager',
+        data.top_assets_by_activity || [],
+        5,
+        (r) => `<tr><td>${r.asset_label || '-'}</td><td>${fmtNum(r.activity_events)}</td><td>${fmtNum(r.active_days)}</td><td>${r.use_level || '-'}</td></tr>`,
+        4
+      );
+
+      renderPagedTable(
+        'topKnownLocationsTable',
+        'topKnownLocationsPager',
+        data.top_known_locations_by_activity || [],
+        5,
+        (r) => `<tr><td>${r.location_label || '-'}</td><td>${fmtNum(r.activity_events)}</td></tr>`,
+        2
+      );
+
+      renderSwapGraph(data.swap_impact_since_03_mar || []);
+    }
+
+    function renderSwapGraph(rows) {
+      const wrap = document.getElementById('swapGraph');
+      const maxVal = Math.max(1, ...rows.map(r => Math.max(Number(r.pre_swap_daily_avg || 0), Number(r.post_swap_daily_avg || 0))));
+      wrap.innerHTML = rows.map(r => {
+        const pre = Number(r.pre_swap_daily_avg || 0);
+        const post = Number(r.post_swap_daily_avg || 0);
+        const preW = (pre * 100 / maxVal).toFixed(1);
+        const postW = (post * 100 / maxVal).toFixed(1);
+        const inc = r.increase_pct == null ? '-' : `${Number(r.increase_pct) > 0 ? '+' : ''}${r.increase_pct}%`;
+        return `
+          <div class="swap-row">
+            <div class="swap-head">
+              <span>${r.pre_swap_wheelchair || '-'} → ${r.post_swap_asset || '-'}</span>
+              <span class="swap-chip">${inc}</span>
+            </div>
+            <div class="swap-bars">
+              <div class="swap-line">
+                <span>Pre-swap avg</span>
+                <div class="swap-track"><span class="swap-fill-pre" style="width:${preW}%"></span></div>
+                <span class="swap-val">${fmtNum(pre)}/day</span>
+              </div>
+              <div class="swap-line">
+                <span>Post-swap avg</span>
+                <div class="swap-track"><span class="swap-fill-post" style="width:${postW}%"></span></div>
+                <span class="swap-val">${fmtNum(post)}/day</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function fetchAndRender() {
+      try {
+        document.getElementById('fetchState').textContent = 'Fetching now...';
+        const res = await fetch(`${DATA_URL}?t=${Date.now()}`, { cache: 'no-store' });
+        const data = await res.json();
+        renderKpis(data);
+        renderMix(data);
+        renderHighlights(data);
+        renderTopline(data);
+        renderAssetTable(data);
+        renderUtilization(data);
+        renderExtendedTables(data);
+        document.getElementById('fetchState').textContent = 'Live';
+        countdownSec = 120;
+      } catch (e) {
+        document.getElementById('lastUpdated').textContent = 'Last updated: datasource unavailable';
+        document.getElementById('fetchState').textContent = 'Retrying...';
+      }
+    }
+
+    function tickCountdown() {
+      const secEl = document.getElementById('clockSec');
+      const ring = document.getElementById('clockProgress');
+      const circumference = 2 * Math.PI * 18;
+      countdownSec = Math.max(0, countdownSec - 1);
+      const progress = countdownSec / 120;
+      ring.style.strokeDasharray = `${circumference}`;
+      ring.style.strokeDashoffset = `${circumference * (1 - progress)}`;
+      secEl.textContent = String(countdownSec);
+      if (countdownSec <= 10 && document.getElementById('fetchState').textContent !== 'Fetching now...') {
+        document.getElementById('fetchState').textContent = 'Refreshing soon...';
+      }
+    }
+
+    fetchAndRender();
+    setInterval(fetchAndRender, TWO_MIN);
+    setInterval(tickCountdown, 1000);
+    setInterval(() => window.location.reload(), TWO_MIN);
+  </script>
+</body>
+</html>
